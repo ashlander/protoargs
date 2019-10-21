@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package bsw.protoargs.main;
+
+message protoargs
+{
+    optional bool help = 1 [default = false];         // Print help and exit
+    required string COMMAND = 2;                      // Command (create, copy)
+}//protoargs
+
+message protoargs_links
+{
+    optional string h = 11 [default = "help"];
+    optional string help = 12 [default = "help"];
+}//protoargs

@@ -1,0 +1,80 @@
+syntax = "proto2";
+
+package bsw.protoargs.schema;
+
+message dummy // this message is present but will be ignored
+{
+    optional string param1 = 1 [default = "default"]; // String param option with default value
+    optional uint32 param2 = 2 [default = 10];        // Integer param with default value
+    optional int32 param3 = 3;                        // Integer param without default value
+    optional float param4 = 4;                        // Float param without default value
+}
+
+// Main message, describing configuration class which will be filled with parsed arguments
+// optional - argument may be missing within command line args
+// required - argument should be present
+// repeated - it may occure several times, but it should be present at least once, so it acts as required, but all the values will be stored
+// types are limited to common type list:
+//    - int32
+//    - uint32
+//    - int64
+//    - uint64
+//    - bool
+//    - string
+// Enums are not supported
+// Name will be filled with parser and accessible from configuration object
+// Default values may be specified
+// Comments on the same line are treated as default value description
+// SO if you want write in comment something nasty, write it above the line
+// The other message companion needed is protoargs_links, however it is optional
+// If protoargs_links missing - all field names from protoargs message will be transformed to lower case, "_" -> "-" , and used as arguments for command line
+// In this situation you will be able to use positional arguments
+// If protoargs_links is present, names for command line arguments will be taken out of them
+// Also all arguments which have no links inside protoargs_links are treated as positional
+// And their names are taken for help transforming them to uppercase (see PARAMG and PARAMH)
+// There may not be more than one positional repeating parameter
+// And position here does matter, currently we expect: PARAMG PARAMH [PARAMH..]
+message protoargs
+{
+    optional string paramA = 1 [default = "// tricky default value"];      // String param option with default value. Note: this comment will be taken as description
+    optional uint32 paramB = 2 [default = 10];        // Integer param with default value
+    optional int32 paramC = 3;                        // Integer param without default value. Avoid new lines they are rendered not correctly in help. Words will be transfered to new line anyway
+    optional float paramD = 4;                        // Float param without default value
+    required string paramE = 5;                       // String param which should be anyway
+    repeated int32 paramF = 6;                        // Integer param which may encounter multiple times
+    required uint64 PARAMG = 7;                       // Positional integer param, positional param is always \"required\"
+    required bool P_A_R_A_M_G_2 = 8;                  // Positional boolean param, positional param is always \"required\", Note: param set - true, missing - false
+    optional bool param_I = 9 [default = true];       // Boolean arg with default value (despite it is declared after positional args, that is not a problem)
+    optional bool param_J = 10;                       // Boolean arg without default value
+    repeated string PARAMH = 11;                      // Positional repeating string params, there may be only one repeating positional param
+    optional bool printHelp = 12;                     // Print help and exit
+}//protoargs
+
+// Additional message, optional
+// If missing all names from protoargs message will be converted into long args or if single char to short args
+// Bad things if links are missing:
+//    - no short args
+//    - not possible to set positional args, because positional args are those that present inside protoargs message without links
+// It describes which short and long parameters should be lined to protoargs configuration
+// No metter if this is optional or required or repeated, they will be ignored
+// Sure you will get useless protobuf class for this one, well redundancy happen
+// Name is used as parameter for command line
+// Names will be transformed into lowercase
+// "_" in the name will be changed to "-" for real args
+// all fields are srings, a must
+// Default value is a link to configuration parameter, so it should be exactly the same
+message protoargs_links
+{
+    optional string a_long_param = 1 [default = "paramA"];
+    optional string a = 2 [default = "paramA"];
+    optional string b_long_param = 3 [default = "paramB"];
+    optional string c = 4 [default = "paramC"];
+    optional string c_long_param = 5 [default = "paramC"];
+    optional string d_long_param = 6 [default = "paramD"];
+    optional string e = 7 [default = "paramE"];
+    optional string f = 8 [default = "paramF"];
+    optional string i = 9 [default = "param_I"];
+    optional string j_long = 10 [default = "param_J"];
+    optional string h = 11 [default = "printHelp"];
+    optional string help = 12 [default = "printHelp"];
+}//protoargs

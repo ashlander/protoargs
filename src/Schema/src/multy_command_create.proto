@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+package bsw.protoargs.main.create;
+
+message protoargs
+{
+    optional bool help = 1 [default = false];         // Print help and exit
+    optional uint64 size = 2 [default = 0];           // Size of the file
+    required string PATH = 3;                         // Path to file to create
+}//protoargs
+
+message protoargs_links
+{
+    optional string h = 1 [default = "help"];
+    optional string help = 2 [default = "help"];
+    optional string s = 3 [default = "size"];
+    optional string size = 4 [default = "size"];
+}//protoargs

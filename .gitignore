@@ -1,0 +1,76 @@
+# https://github.com/github/gitignore
+# Vim
+*.sw[a-z]
+*~
+tags
+
+# Cmake
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# Protobuf
+*.pb.h
+*.pb.cc
+
+# Protoargs
+*.pa.h
+*.pa.cc
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Python
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Conan
+conanbuildinfo.cmake
+conanbuildinfo.txt
+conaninfo.txt
+
+# Doxygen
+html/
+latex/
+doxygen_sqlite3.db
+
+# Code Coverage
+coverage/
+
+# Binaries
+build/
+release/
+debug/
+asan/
+tsan/
+usan/
+
+# Project
+src/bin/
+src/lib/
+src/include/ProtoargsConfig.h
+src/Protoargs/bin/*.bak
+

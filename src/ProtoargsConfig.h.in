@@ -1,0 +1,11 @@
+// the configured options and settings for project
+#define Protoargs_PROJECT_PATH @CMAKE_SOURCE_DIR@
+
+#define Protoargs_NAME @CONAN_PACKAGE_NAME@
+#define Protoargs_VERSION @CONAN_PACKAGE_VERSION@
+#define Protoargs_OS @CONAN_SETTINGS_OS@
+#define Protoargs_ARCH @CONAN_SETTINGS_ARCH@
+#define Protoargs_BUILD_TYPE @CONAN_SETTINGS_BUILD_TYPE@
+
+#define Protoargs_BUILD_NUM @BUILD_NUM@
+#define Protoargs_GIT_HASH @GIT_HASH@

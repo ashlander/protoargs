@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package bsw.protoargs.main.copy;
+
+message protoargs
+{
+    optional bool help = 1 [default = false];         // Print help and exit
+    optional bool recursive = 2 [default = false];    // Recursive copy
+    required string SRC = 3;                          // Path to source path
+    required string DST = 4;                          // Path to destination path
+}//protoargs
+
+message protoargs_links
+{
+    optional string h = 1 [default = "help"];
+    optional string help = 2 [default = "help"];
+    optional string r = 3 [default = "recursive"];
+    optional string recursive = 4 [default = "recursive"];
+}//protoargs

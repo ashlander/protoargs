@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package bsw.protoargs.simple;
+
+// no links, no positional
+message protoargs
+{
+    required uint64 count = 1 [default = 1];             // Converted to --count
+    optional string configuration = 2 [default = ""];    // Converted to --configuration
+    repeated bool flags = 3;                             // Converted to --flags, each encounter will be stored in list
+    optional bool version = 4 [default = false];         // Converted to --version
+    optional bool help = 5 [default = false];            // Converted to --help
+    optional string c = 6 [default = "some value"];      // Converted to -c short option
+}//protoargs
