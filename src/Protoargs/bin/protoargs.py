@@ -45,7 +45,7 @@ class ArgsParser:
 
     def usage(self):
 
-        usage = """python protoargs.py -o <out DIR> PROTOFILE [PROTOFILE..]
+        usage = """python protoargs.py -o <out DIR> -i PROTOFILE
             out DIR         [mandatory] path to output directory
             PROTOFILE       [mandatory] path to proto file
             """

@@ -20,7 +20,7 @@ class ProtoconfConan(ConanFile):
     default_options = "codecov=False" , "clangcheck=False" , "asancheck=False" , "tsancheck=False" , "usancheck=False", "tags=False"
     generators = "cmake"
     build_requires = "boost/1.69.0@conan/stable", "gtest/1.8.1@bincrafters/stable"
-    requires = "protobuf/3.6.1@bincrafters/stable", "protoc_installer/3.6.1@bincrafters/stable" #, "cxxopts/v2.1.2@bsw/stable"
+    requires = "protobuf/3.6.1@bincrafters/stable", "protoc_installer/3.6.1@bincrafters/stable"
 
 
     #def source(self): # TODO

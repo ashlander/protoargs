@@ -1,126 +1,255 @@
+Intro
+=====
+
+C++ program usually starts from argument parsing, configuration file creation and configuration class, to store it in memory. It is not hard but time consuming work.
+
+This project should make it easier and less time consuming to work with arguments. So the brand new project could be started faster, it allows easy parameters extension, so complex command branches may be as easy as change configuration. It should be simple to code as well.
+
+If you need flexible and easy way NOT to write argument parser and automate help output, do want to rely on configuration rather than code - welcome, you are in the right spot.
+
+.. image:: src/Protoargs/img/intro.png
+   :align: center
+
 Description
 ===========
 
-**Protoargs** is python proto file compiler, which generates args parser and configuration object filled using protobuf and cxxopts.
+**Protoargs** is python proto file compiler, which generates arguments parser and configuration ready in-code structures using protobuf_ and cxxopts_.
 
-The program usualy starts from argument parsing, configuration file creation and configuration class, to store it in memory. It is not hard but time consuming work.
+The idea - you create *any_name_scheme.proto* file and then, using **protoc**, you get generated source files with configuration container ".pb.h" and ".pb.cc", using **protoargs** on the same schema file, you will get additional ".pa.h" and ".pa.cc" files, which contain argument parsing.
 
-This project should make it easier and less time consuming work with arguments. So the brand new project could be started faster.
+.. _protobuf: https://github.com/protocolbuffers/protobuf
 
-It is based on protobuf project and cxxopts project. So the idea - you create *scheme.proto* file, and then using protobuf, you get generated source files with configuration container, using protoargs on the same schema file you will get ".pa.h" and ".pa.cc" files, which contain parsing and protobuf object filling.
+.. _cxxopts: https://github.com/jarro2783/cxxopts
 
-If you need storing configuration file with args, you may use **protoconf** to make your life easier.
+.. image:: src/Protoargs/img/general.png
+   :align: center
 
-**Note**: Use proto file version 2 only
+If you need storing configuration file with args, you may use Protoconf_ to make your life easier.
 
-PROS:
+**PROS**:
 
-   + Creates c++ configuration class with all setters and getters for all fields based on schema.
-   + Creates c++ args parsing using cxxopts
-   + Protoconf compatibility
-   + This is protobuf, man, you gain ready to send configuration directly via network, or update it same way from remote host (no, network implememntation you should find on your own).
-   + Simplifies creation even complex commands like 'command subcommand [subcommand_args]' (see tests)
++ Creates c++ configuration class with all setters and getters for all fields based on schema.
++ Creates c++ args parsing using cxxopts
++ This is protobuf, you get ready to send configuration directly via network, or update it same way from remote host (no, network implementation you should find on your own).
++ Simplifies creation even complex commands like 'command subcommand [subcommand_args]'
++ Protoconf_ compatibility
 
-CONS:
+.. _Protoconf: https://github.com/ashlander/protoconf
 
-   - Linux only tested
-   - proto file version 2 only supported
-   - Dependencies, not standalone (protoc + cxxopts)
+**CONS**:
 
-Building Tests with Conan (Recomended)
-======================================
+- Tested and used on Linux only (be my guest to try it out on other OS, and I will gladly remove this line)
+- Proto file version 2 only supported
+- Dependencies, not standalone (protobuf + cxxopts)
 
-Build dependencies:
+Configuration File Rules
+========================
 
-   * conan
-   * ctags (optional)
+The configuration is based on protobuf proto file.
 
-.. code:: bash
+If you do not know what is **protobuf** project and **proto** configuration file, I would recommend reading about it at protobuf_. However this is not show stopper, you may proceed without knowing it well. But if you are stuck with configuration please read about proto_ file creation.
 
-     mkdir debug
-     cd debug && conan install -s build_type=Debug ../.
-     conan build ../.
+.. _proto: https://developers.google.com/protocol-buffers/docs/proto
+
+1. **Use proto file version 2 only**.
+
+2. **package** directive is parsed and correct namespaces are used.
+
+3. Message **protoargs** and **protoargs_links** are predefined and should not be used for other purposes other than arguments parsing.
+
+4. Other messages in the same proto file will be ignored.
+
+5. Meaning of existing proto file directives using protoargs:
+
+   + **optional** - argument may be missing within command line args, and is optional, you may specify default value for the parameter if missing. By default it will contain 0 for integers or empty string.
+   + **required** - argument should be present, and is mandatory.
+   + **repeated** - it may occur several times, but it should be present at least once, so it acts as **required**, but all the values will be stored in array for you.
+
+6. Types are limited to common type list:
+
+   + **int32**
+   + **uint32**
+   + **int64**
+   + **uint64**
+   + **bool**
+   + **string**
+
+7. **Enums** are not supported.
+
+8. Values specified in **upper case** will be transformed into **lower case** parameters
+
+9. Values containing **"_"** will be transformed to contain **"-"** instead
+
+10. Custom default values may be specified for optional arguments. They will be shown during help message, as well as expected argument type.
+
+11. Comments at the same line are treated as default value description ( SO if you want write in comment something nasty, write it above the line ).
+
+12. Comments which are used for help description may not be multi-line.
+
+message protoargs
+=================
+
+This is the main message, describing configuration class which will be filled with parsed arguments. **protoargs.py** script will search for this message name, and will fail if missing.
+
+Let's start from simple one.
+
+.. code:: proto
+
+    syntax = "proto2";
+
+    package bsw.protoargs.schema;
+
+    // Main message, describing configuration class which will be filled with parsed arguments
+    message protoargs
+    {
+        optional bool help = 1;                         // Show help message and exit,        it is transformed into --help long argument
+        optional bool version = 2;                      // Show version message and exit,     it is transformed into --version long argument
+        optional bool who_am_i = 3;                     // Show custom user message and exit, it is transformed into --who-am-i long argument
+        optional uint p = 4 [default = 10];             // Integer param with default value,  it is transformed into -p short argument, even if not specified it will return with value 10
+        optional uint32 param = 5 [default = 10];       // Integer param with default value,  it is transformed into --param short argument, even if not specified it will return with value 10
+        optional string UPCASE = 6 [default = "Test"];  // Integer param with default value,  it is transformed into --upcase long argument, even if not specified it will return with value "Test"
+    }//protoargs
 
 ..
 
-Building Tests extras
-=====================
+This will automatically allows us parse specified arguments:
 
-**-o tags=True**        Tags file generation on
+.. code:: bash
 
-**-o codecov=True**     Enable code coverage
+   ./program --help
+   ./program --version
+   ./program --who-am-i
+   ./program -p 12 --param=11
+   ./program -p 12 --param=11 --who_am_i
 
-**-o clangcheck=True**  Enable clang static analizer build
+..
 
-**-o asancheck=True**   Enable build with Address Santizer
+This is very nice for the start, but here is the problem: what if we want **-p** and **--param** arguments point to the same structure variable, because now they have separate and may carry different values, so currently we need to check both to decide the final value.
 
-**-o tsancheck=True**   Enable build with Thread Santizer
+The other problem: what if we need some positional values, like:
 
-**-o usancheck=True**   Enable build with Undefined Santizer
+.. code:: bash
 
-Building Tests without Conan
-============================
+   ./program SRC DST
 
-Install dependencies:
+..
 
-   * protobuf with protoc
-   * gtest
-   * ctags (optional)
+For these purposes another message is prepared, called **protoargs_links**.
 
-See conanfile.py for more information on versions
+message protoargs_links
+=======================
 
-Building Tests Debug
+This is optional message, which is needed for advanced arguments parsing.
+
+It describes which short and long parameters should be linked to protoargs configuration.
+For all message fields no matter if this is optional or required or repeated, the types are being **ignored**.
+Field names from **protoargs_links** are now used as argument names for command line, and **protoargs** names will be used for in-code structure getters.
+All fields are **strings**, a must.
+Default value is a link to configuration parameter inside **protoargs**, and it should be **exactly the same**.
+
+Now let's update our configuration, so that **-p** and  **--param** arguments will be bind to the same structure variable.
+
+.. code:: proto
+
+    syntax = "proto2";
+
+    package bsw.protoargs.schema;
+
+    // Main message, describing configuration class which will be filled with parsed arguments
+    message protoargs
+    {
+        optional bool printHelp = 1;                       // Show help message and exit,        it is transformed into --help long argument
+        optional bool printVersion = 2;                    // Show version message and exit,     it is transformed into --version long argument
+        optional bool who_am_iVal = 3;                     // Show custom user message and exit, it is transformed into --who-am-i long argument
+        optional uint32 paramVal = 4 [default = 10];       // Integer param with default value,  it is transformed into --param short argument, even if not specified it will return with value 10
+        optional string UPCASEVAL = 5 [default = "Test"];  // Integer param with default value,  it is transformed into --upcase long argument, even if not specified it will return with value "Test"
+    }//protoargs
+
+    // Additional message, optional
+    message protoargs_links
+    {
+        optional string help = 1 [default = "printHelp"];       // This comment will be ignored
+        optional string version = 2 [default = "printVersion"]; // This comment will be ignored
+        optional string who_am_i = 3 [default = "who_am_iVal"]; // This comment will be ignored
+        optional string p = 4 [default = "paramVal"];           // This comment will be ignored
+        optional string param = 5 [default = "paramVal"];       // This comment will be ignored
+        optional string UPCASE = 6 [default = "UPCASEVAL"];     // This comment will be ignored
+    }//protoargs
+
+..
+
+That's it. Now *paramVal* will be transformed into *paramval()* in-code method, but it will be filled when *-p NUM* or *--param=NUM* option specified. Field names inside **protoargs** message were changed to show you that now you can name them more verbose, and it will not influence actual command line argument names. So the command usage string will have exact the same names:
+
+.. code:: bash
+
+   ./program --help
+   ./program --version
+   ./program --who-am-i
+   ./program -p 12 --param=11 # Note: this is not valid now, they can not be used both at the same time, use repeated instead of optional to achieve this
+   ./program -p 12
+   ./program --param=11
+
+..
+
+
+Positional arguments
 ====================
 
-Go inside **src** directory.
+Suppose you need this kind of arguments to parse:
 
 .. code:: bash
 
-    cmake -DWITH_CONAN=OFF -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt
-
-    make
-..
-
-Building Release
-================
-
-Go inside **src** directory.
-
-.. code:: bash
-
-    cmake -DWITH_CONAN=OFF -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
-
-    make
+   ./program DST SRC [SRC..]
 
 ..
 
-Building extras
-===============
+Where DST and SRC are not short/long parameters but defined rather by position. To make it more complex, let the user to specify SRC multiple times.
 
-**-DWITH_CONAN=ON**     [default = **ON**]     if need build and package with conan
+First thing to know about is - **positional** arguments are **always mandatory**, so even if you specify optional type, parser will generate code as if it was required type. Sure if positional argument could be optional, well you could not rely on position anymore.
 
-**-DWITH_TAGS=ON**      [default = **OFF**]    if need tags file generation
+The other nice feature is having positional argument to be repeated multiple times, which is actually possible. This brings us to limitation, **there should be only one repeating positional argument, and it may be only at the end**.
 
-**-DWITH_CODECOV=ON**   [default = **OFF**]    Enable code coverage
+Positional argument may be defined only using both **protoargs** and **protoargs_links** messages. All fields from **protoargs** message which are not linked inside **protoargs_links** are treated as **positional**. And their position inside **protoargs** message will be preserved as argument parsing, so place repeated positional arguments at the end, if you do want make it working. Be warned that position number of the protobuf field is not parsed, so if you change the lines, you will break things, even if numbers are preserved, you need correct line order for now (for the example below, do not swap SRC and DST lines).
 
-**-DWITH_ASAN=ON**      [default = **OFF**]    Enable build with Address Santizer
+.. code:: proto
 
-**-DWITH_TSAN=ON**      [default = **OFF**]    Enable build with Thread Santizer
+    syntax = "proto2";
 
-**-DWITH_USAN=ON**      [default = **OFF**]    Enable build with Undefined Santizer
+    package bsw.protoargs.schema;
+
+    // Main message, describing configuration class which will be filled with parsed arguments
+    message protoargs
+    {
+        required string DST = 1;          // Positional argument
+        repeated string SRC = 2;          // Positional repeating argument
+    }//protoargs
+
+
+    // Additional message, optional
+    message protoargs_links
+    {
+    }//protoargs
+
+..
+
+**Note**: even if all your arguments are positional, you need empty **protoargs_links** message to be present in order for parser to understand your intentions. Other way you will get command line parser search for *--dst=STRING* and *--src=STRING* arguments.
 
 Usage
 =====
 
+First of all, you are interested in one single file in this project, python script located in bin_ directory.
+
+.. _bin: src/Protoargs/bin/
+
 .. code:: bash
 
-   python protoargs.py -o <out DIR> PROTOFILE
+   python protoargs.py -o <out DIR> -i PROTOFILE
                out DIR         [mandatory] path to output directory
                PROTOFILE       [mandatory] path to proto file
 
 ..
 
-Also you need c++ files generated from the same proto file using **protoc** compiler. See 
+Also you need files generated from the same proto file using **protoc** compiler.
 
 .. code:: bash
 
@@ -128,12 +257,12 @@ Also you need c++ files generated from the same proto file using **protoc** comp
 
 ..
 
-You should get 4 files as result: **.pa.cc**, **.pa.h**, **pb.cc**, **pb.h**. Attach them to your project and use.
+You should get 4 files as result: **.pa.cc**, **.pa.h**, **pb.cc**, **pb.h**. Attach them to your project and now you are ready to move forward. Do not forget installed dependencies like **protobuf** and **cxxopts**.
 
-Example
-=======
+Example of Usage Output
+=======================
 
-Suppose we have such a proto file
+Suppose we have such a proto file (do not be afraid, this is just to show you possible output).
 
 .. code:: proto
 
@@ -150,29 +279,6 @@ Suppose we have such a proto file
     }
     
     // Main message, describing configuration class which will be filled with parsed arguments
-    // optional - argument may be missing within command line args
-    // required - argument should be present
-    // repeated - it may occure several times, but it should be present at least once, so it acts as required, but all the values will be stored
-    // types are limited to common type list:
-    //    - int32
-    //    - uint32
-    //    - int64
-    //    - uint64
-    //    - bool
-    //    - string
-    // Enums are not supported
-    // Name will be filled with parser and accessible from configuration object
-    // Default values may be specified
-    // Comments on the same line are treated as default value description
-    // SO if you want write in comment something nasty, write it above the line
-    // The other message companion needed is protoargs_links, however it is optional
-    // If protoargs_links missing - all field names from protoargs message will be transformed to lower case, "_" -> "-" , and used as arguments for command line
-    // In this situation you will be able to use positional arguments
-    // If protoargs_links is present, names for command line arguments will be taken out of them
-    // Also all arguments which have no links inside protoargs_links are treated as positional
-    // And their names are taken for help transforming them to uppercase (see PARAMG and PARAMH)
-    // There may not be more than one positional repeating parameter
-    // And position here does matter, currently we expect: PARAMG PARAMH [PARAMH..]
     message protoargs
     {
         optional string paramA = 1 [default = "// tricky default value"];      // String param option with default value. Note: this comment will be taken as description
@@ -190,18 +296,6 @@ Suppose we have such a proto file
     }//protoargs
     
     // Additional message, optional
-    // If missing all names from protoargs message will be converted into long args or if single char to short args
-    // Bad things if links are missing:
-    //    - no short args
-    //    - not possible to set positional args, because positional args are those that present inside protoargs message without links
-    // It describes which short and long parameters should be lined to protoargs configuration
-    // No metter if this is optional or required or repeated, they will be ignored
-    // Sure you will get useless protobuf class for this one, well redundancy happen
-    // Name is used as parameter for command line
-    // Names will be transformed into lowercase
-    // "_" in the name will be changed to "-" for real args
-    // all fields are srings, a must
-    // Default value is a link to configuration parameter, so it should be exactly the same
     message protoargs_links
     {
         optional string a_long_param = 1 [default = "paramA"];
@@ -217,154 +311,6 @@ Suppose we have such a proto file
         optional string h = 11 [default = "printHelp"];
         optional string help = 12 [default = "printHelp"];
     }//protoargs
-
-..
-
-Generated c++ code header
-
-.. code:: c++
-
-   #pragma once
-   
-   #include <string>
-   #include <set>
-   #include <regex>
-   #include <cxxopts.hpp>
-   #include "schema.pb.h"
-   
-   namespace bsw {
-   namespace protoargs {
-   namespace schema {
-   
-       class ProtoArgs
-       {
-           public:
-               ProtoArgs() {}
-               virtual ~ProtoArgs() {}
-   
-               /**
-                * @brief Get program usage
-                * @param program Program name for usage description
-                * @return Usage string
-                */
-               virtual std::string usage(const std::string& program) const;
-   
-               /**
-                * @brief Parse arguments and get object with configuration
-                * @param program Program name for usage description
-                * @param argc    Command line args num
-                * @param argv[]  Command line args
-                * @param allowIncomplete  Fills valid configuration fields with no errors, ignoring requires
-                * @return Configuration or nullptr if failed
-                */
-               virtual protoargs* parse(const std::string& program, int argc, char* argv[], bool allowIncomplete = false) const;
-   
-               /**
-                * @brief In case you want add something, or change
-                * e.g. set your own usage output
-                * look into cxxopts documentation
-                * Note: you should parse it manually from now on
-                * @param program Program name for usage description
-                * @return Options
-                */
-               virtual cxxopts::Options prepareOptions(const std::string& program) const;
-   
-               /**
-                * @brief Filter result, Note: argv will be destroyed on object destruction
-                */
-               struct ExcludeResult
-               {
-                   ~ExcludeResult() { delete [] argv; }
-                   int argc;
-                   char** argv;
-               };//struct
-   
-               /**
-                * @brief Helper function, filter arguments by positions sequence
-                * This is useful if you need support multy-commands, like "git add [add args]" and "git commit [commit args]"
-                * So at some point you need to remove "add" ot "commit" command argument
-                * @param argc Original argc
-                * @param argv Original argv
-                * @param exclude Array of positions to exclude
-                * @return Result with updated argc argv
-                */
-               virtual ExcludeResult exclude(int argc, char** argv, std::set<int> exclude) const
-               {
-                   char** argvFiltered = new char*[argc];
-                   int pos = 0;
-                   int excluded = 0;
-                   for (int i = 0; i < argc; ++i)
-                      if (exclude.find(i+1) == exclude.end())
-                         argvFiltered[pos++] = argv[i];
-                      else
-                         ++excluded;
-   
-                   ExcludeResult result;
-                   result.argc = argc - excluded;
-                   result.argv = argvFiltered;
-   
-                   return result;
-               }
-       };//class
-   
-   }//namespace schema
-   }//namespace protoargs
-   }//namespace bsw
-
-..
-
-
-Usage in your code (taken from the tests)
-
-.. code:: c++
-
-       const char* argv[] = {
-          "program"
-          ,"-e", "valueE"
-          ,"--a-long-param", "somevalue"
-          ,"--b-long-param", "4"
-          ,"-c", "555"
-          ,"--d-long-param", "555.5"
-          ,"-f", "1"
-          ,"-f", "2"
-          ,"-f", "3"
-          ,"-i"
-          ,"--j-long"
-          , "50" // paramG
-          , "0" // bool paramG
-          , "pos1", "pos2", "pos3"
-       };
-       int argc = sizeof(argv)/sizeof(argv[0]);
-
-       // These 2 lines is all you hopefully need
-       schema::ProtoArgs arguments;
-       auto config = std::shared_ptr<schema::protoargs>( arguments.parse("program", argc, (char**)argv) );
-
-       // config is protobuf parser, as you can see how we access fields
-       ASSERT_TRUE(config != nullptr);
-
-       ASSERT_TRUE( config->has_parama() );
-       ASSERT_EQ( "somevalue", config->parama() );
-
-       ASSERT_TRUE( config->has_paramb() );
-       ASSERT_EQ( 4u, config->paramb() );
-
-       ASSERT_TRUE( config->has_paramc() );
-       ASSERT_EQ( 555, config->paramc() );
-
-       ASSERT_TRUE( config->has_paramd() );
-       ASSERT_EQ( 555.5f, config->paramd() );
-
-       ASSERT_TRUE( config->has_parame() );
-       ASSERT_EQ( "valueE", config->parame() );
-
-       ASSERT_EQ( 3, config->paramf_size() );
-
-       ASSERT_TRUE( config->has_param_i() );
-       ASSERT_TRUE( config->param_i() );
-
-       ASSERT_TRUE( config->has_param_j() );
-       ASSERT_TRUE( config->param_j() );
 
 ..
 
@@ -419,4 +365,321 @@ Your application usage output
    
 ..
 
-See more tests for even more complex examples.
+Simple Example
+==============
+
+Let's take our first simple example (as a reminder *-p NUM* and *--param=NUM* arguments are different and will be stored in different values):
+
+.. code:: proto
+
+    syntax = "proto2";
+
+    package bsw.protoargs.schema;
+
+    // Main message, describing configuration class which will be filled with parsed arguments
+    message protoargs
+    {
+        optional bool help = 1;                         // Show help message and exit,        it is transformed into --help long argument
+        optional bool version = 2;                      // Show version message and exit,     it is transformed into --version long argument
+        optional bool who_am_i = 3;                     // Show custom user message and exit, it is transformed into --who-am-i long argument
+        optional uint p = 4 [default = 10];             // Integer param with default value,  it is transformed into -p short argument, even if not specified it will return with value 10
+        optional uint32 param = 5 [default = 10];       // Integer param with default value,  it is transformed into --param short argument, even if not specified it will return with value 10
+        optional string UPCASE = 6 [default = "Test"];  // Integer param with default value,  it is transformed into --upcase long argument, even if not specified it will return with value "Test"
+    }//protoargs
+
+..
+
+Now what you need from 4 generated files is the one with **.pa.h** file, it contains interface you need. It will look like **class ProtoArgs** protected with specified namespaces **bsw.protoargs.schema**. Inside you will find main access methods:
+
+.. code:: c++
+
+    /**
+     * @brief Get program usage
+     * @param program Program name for usage description
+     * @return Usage string
+     */
+    virtual std::string usage(const std::string& program) const;
+
+    /**
+     * @brief Parse arguments and get object with configuration
+     * @param program Program name for usage description
+     * @param argc    Command line args num
+     * @param argv[]  Command line args
+     * @param allowIncomplete  Fills valid configuration fields with no errors, ignoring requires
+     * @return Configuration or nullptr if failed
+     */
+    virtual protoargs* parse(const std::string& program, int argc, char* argv[], bool allowIncomplete = false) const;
+
+..
+
+They are quite clear, **usage** outputs help message, and the **parse** parses arguments. Both accept program name which you want to see in help, as long as **parse** method may call **usage** internally if something goes wrong.
+
+**allowIncomplete** option if set to true, will return all successfully parsed arguments ignoring failed ones, other way null will be returned. This option is useful if tested for --help/--version arguments when having required arguments as well. It will return configuration and not null saying required argument missing. The idea is to test twice, at first with **allowIncomplete** and check for --help/--version, and next check without, making it do full check. Still even with **allowIncomplete** it may output errors anyway if wrong arguments specified.
+
+**Note**: configuration returned is created with **new** and should be destroyed afterwards. It is highly recommended to use **unique_ptr** or **shared_ptr** to ease your life.
+
+Let's go for code:
+
+.. code:: c++
+
+    simple::ProtoArgs arguments;
+    auto config = std::unique_ptr<simple::protoargs>( arguments.parse(argv[0], argc, (char**)argv) );
+    if (!config)
+    {
+       // you do not need usage output, it is already on the screen
+       return EXIT_FAILURE;
+    }
+
+    if (argc == 1 || config->has_help()) // if no argument or --help specified print help end exit
+    {
+       std::cout << arguments.usage(argv[0]);
+       return EXIT_SUCCESS;
+    }
+
+    if (config->has_version()) // if version specified
+    {
+       std::cout << "Some version";
+       return EXIT_SUCCESS;
+    }
+
+    if (config->has_param())
+    {
+       std::cout << "Param = " << config->param();
+    }
+
+    ...
+..
+
+Well that should be simple enough to start your going.
+
+Advanced Usage
+==============
+
+In case this all is not how you would like it, and e.g. **usage** method output does not satisfy you. You may start doing it all by yourself. Fist of all - you can redefine **usage** method, it is virtual and all you need is override and change it. You may loose flexibility unfortunately if schema will change.
+
+The other method is to get **cxxopts** internals with **prepareOptions** method. From now on read cxxopts_ documentation on how to proceed.
+
+.. code:: c++
+
+    /**
+     * @brief In case you want add something, or change
+     * e.g. set your own usage output
+     * look into cxxopts documentation
+     * Note: you should parse it manually from now on
+     * @param program Program name for usage description
+     * @return Options
+     */
+    virtual cxxopts::Options prepareOptions(const std::string& program) const;
+ 
+..
+
+Complex Example
+===============
+
+Here comes something big. Current implementations allows us to make complex parsing easily. Like
+
+.. code:: bash
+
+   program --help
+   program create --help
+   program create [create arguments]
+
+..
+
+The idea behind it is a little bit tricky, but it is working well enough.
+
+So first of all you need 2 *.proto* files with own command settings, plain **program** and **program create**.
+
+Here is main proto:
+
+.. code:: plain
+
+   syntax = "proto2";
+
+   package bsw.protoargs.main;
+
+   message protoargs
+   {
+       optional bool help = 1 [default = false];         // Print help and exit
+       required string COMMAND = 2;                      // Command (create, copy, etc)
+   }//protoargs
+
+   message protoargs_links
+   {
+       optional string h = 11 [default = "help"];
+       optional string help = 12 [default = "help"];
+   }//protoargs
+
+..
+
+**Note**: Each of 2 proto files will be source for generated files, each generated set will have **class ProtoArgs** which will have name conflict, so change **package** directive, so that each command setting will be protected with own namespace.
+
+So here we do expect no or single argument for main program. This limitation gives us advantage.
+
+Let's go for the rest proto files
+
+.. code:: plain
+
+    syntax = "proto2";
+
+    package bsw.protoargs.main.create;
+
+    message protoargs
+    {
+        optional bool help = 1 [default = false];         // Print help and exit
+        optional uint64 size = 2 [default = 0];           // Size of the file
+        required string PATH = 3;                         // Path to file to create
+    }//protoargs
+
+    message protoargs_links
+    {
+        optional string h = 1 [default = "help"];
+        optional string help = 2 [default = "help"];
+        optional string s = 3 [default = "size"];
+        optional string size = 4 [default = "size"];
+    }//protoargs
+
+..
+
+After generating all 8 files, let's think about these command parsing:
+
+.. code:: bash
+
+   program --help
+   program create --help
+
+..
+
+For the first iteration we need to parse with main program parser. But it is created to parse the first and not the second. It will fail on **program create --help**. So as far as we have limited us to 2 options we may parse first 2 options only.
+
+We still will be using **allowIncomplete** when parsing, to avoid error message saying *required parameter command is missing*, when searching for -h/--help.
+
+.. code:: c++
+
+    main::ProtoArgs arguments;
+
+    // first time parse withh allowIncomplete to avoid missing required argument error
+    auto config = std::unique_ptr<main::protoargs>( arguments.parse(program, argc < 2 ? argc : 2 /*need only 2 args to detect command*/, (char**)argv, true /*allow incomplete*/) );
+
+    if (!config)
+    {
+       // you do not need usage output, it is already on the screen
+       return EXIT_FAILURE;
+    }
+
+    if (argc == 1 || config->has_help()) // if no argument or --help specified print help end exit
+    {
+       std::cout << arguments.usage(program);
+       return EXIT_SUCCESS;
+    }
+
+    // second time parse is full check parsing, so we do need this command
+    config = std::unique_ptr<main::protoargs>( arguments.parse(program, argc < 2 ? argc : 2 /*need only 2 args to detect command*/, (char**)argv);
+
+    if (!config)
+    {
+       // you do not need usage output, it is already on the screen
+       return EXIT_FAILURE;
+    }
+
+    if (config->has_command && config->command() == "create")
+    {
+       ...
+    }
+
+    ...
+
+..
+
+Ok, we have discovered command, now that's time to parse. The only problem here is that we have positional argument (which is command) standing not at the end, so we can't create proper schema to parse. But as long as we found proper command we do not need it any more, so how about removing. So meet **exclude** method, which updates incoming arguments by removing some of them.
+
+.. code:: c++
+
+    /**
+     * @brief Filter result, Note: argv will be destroyed on object destruction
+     */
+    struct ExcludeResult
+    {
+        ~ExcludeResult() { delete [] argv; }
+        int argc;
+        char** argv;
+    };//struct
+
+    /**
+     * @brief Helper function, filter arguments by positions sequence
+     * This is useful if you need support multy-commands, like "git add [add args]" and "git commit [commit args]"
+     * So at some point you need to remove "add" ot "commit" command argument
+     * @param argc Original argc
+     * @param argv Original argv
+     * @param exclude Array of positions to exclude
+     * @return Result with updated argc argv
+     */
+    virtual ExcludeResult exclude(int argc, char** argv, std::set<int> exclude) const
+
+..
+
+Now continue parsing our **create** command:
+
+.. code:: c++
+
+    ...
+
+    if (config->has_command && config->command() == "create")
+    {
+         auto helpProgram = program + " " + command;
+
+         main::create::ProtoArgs createArguments;
+
+         auto filtered = createArguments.exclude(argc, (char**)argv, { 2 }); // remove 2nd position with command
+
+         // first parsing - ignoring required parameters
+         auto createConfig = std::unique_ptr<main::create::protoargs>( createArguments.parse(helpProgram, filtered.argc, filtered.argv, true /*allow incomplete*/) );
+
+         if (!createConfig)
+         {
+            // you do not need usage output, it is already on the screen
+            return EXIT_FAILURE;
+         }
+
+         if (argc == 1 || createConfig->has_help()) // if no argument or --help specified print help end exit
+         {
+            std::cout << createArguments.usage(helpProgram);
+            return EXIT_SUCCESS;
+         }
+
+         // second full parsing with full check
+         createConfig = std::unique_ptr<main::create::protoargs>( createArguments.parse(helpProgram, filtered.argc, filtered.argv, true /*allow incomplete*/) );
+
+         if (!createConfig)
+         {
+            // you do not need usage output, it is already on the screen
+            return EXIT_FAILURE;
+         }
+
+         // rest values discovery
+         ...
+    }
+
+    ...
+
+..
+
+Extreme Usage
+=============
+
+Sometimes people need some real complex argument parsing, like
+
+.. code:: bash
+
+   program [program options] command [command options]
+
+..
+
+Well, I have not tested it this way, but you may achieve it. The trick is you need to calculate number of *[program options]* manually. This way you can exclude needed number of arguments, and proceed as previous example.
+
+Building Tests
+==============
+
+Proceed to Tests_.
+
+.. _Tests: src/Tests/
