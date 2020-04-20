@@ -641,14 +641,14 @@ Now continue parsing our **create** command:
             return EXIT_FAILURE;
          }
 
-         if (argc == 1 || createConfig->has_help()) // if no argument or --help specified print help end exit
+         if (filtered.argc == 1 || createConfig->has_help()) // if no argument or --help specified print help end exit
          {
             std::cout << createArguments.usage(helpProgram);
             return EXIT_SUCCESS;
          }
 
          // second full parsing with full check
-         createConfig = std::unique_ptr<main::create::protoargs>( createArguments.parse(helpProgram, filtered.argc, filtered.argv, true /*allow incomplete*/) );
+         createConfig = std::unique_ptr<main::create::protoargs>( createArguments.parse(helpProgram, filtered.argc, filtered.argv) );
 
          if (!createConfig)
          {
@@ -683,3 +683,10 @@ Building Tests
 Proceed to Tests_.
 
 .. _Tests: src/Tests/
+
+Help
+====
+
+The script was never perfect, just because author avoids edge cases does not make it usable for everyone. So it will be just great to receive feedbacks, features, bug reports and fixes. Thanks people.
+
+I may be not so fast with changes, sorry for that.
