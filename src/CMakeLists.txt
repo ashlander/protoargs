@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 project (Protoargs)
 
 # with conan
-option(WITH_CONAN "Switch conan build" ON)
+#option(WITH_CONAN "Switch conan build" ON)
 if (WITH_CONAN)
     message(STATUS "CONAN BUILD enabled")
 else()
