@@ -46,8 +46,12 @@ message protoargs
     required bool P_A_R_A_M_G_2 = 8;                  // Positional boolean param, positional param is always \"required\", Note: param set - true, missing - false
     optional bool param_I = 9 [default = true];       // Boolean arg with default value (despite it is declared after positional args, that is not a problem)
     optional bool param_J = 10;                       // Boolean arg without default value
+    optional float PARAM_FLOAT = 15;                   // Positional float param
+    optional double PARAM_DOUBLE = 16;                 // Positional double param
     repeated string PARAMH = 11;                      // Positional repeating string params, there may be only one repeating positional param
     optional bool printHelp = 12;                     // Print help and exit
+    optional float paramFloat = 13;                   // Float param
+    optional double paramDouble = 14;                 // Double param
 }//protoargs
 
 // Additional message, optional
@@ -77,4 +81,6 @@ message protoargs_links
     optional string j_long = 10 [default = "param_J"];
     optional string h = 11 [default = "printHelp"];
     optional string help = 12 [default = "printHelp"];
+    optional string k = 13 [default = "paramFloat"];
+    optional string l = 14 [default = "paramDouble"];
 }//protoargs

@@ -51,7 +51,7 @@ foreach(PROTOPATH ${SCHEMA_PROTO})
    string(REGEX REPLACE "\\.[^.]*$" "" SCHEMA ${PROTOPATH}) # remove file extension
    add_custom_command (    OUTPUT              ${SCHEMA}.pa.cc
                            COMMAND             ${PROJECT_PROTOARGS_COMMAND}
-                           ARGS                -o ${PROJECT_SOURCE_DIR} -i ${PROTOPATH}
+                           ARGS                -o ${PROJECT_SOURCE_DIR} -i ${PROTOPATH} --cpp
                            DEPENDS             ${SCHEMA_PROTO}
                            WORKING_DIRECTORY   ${CMAKE_SOURCE_DIR} )
 endforeach()

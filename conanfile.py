@@ -28,6 +28,8 @@ class ProtoconfConan(ConanFile):
     def build(self):
         cmake = CMake(self)
 
+        cmake.definitions["WITH_CONAN"] = "ON"
+
         if self.options.codecov == "True":
             cmake.definitions["WITH_CODECOV"] = "ON"
 

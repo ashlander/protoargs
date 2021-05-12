@@ -1,109 +1,13 @@
-#!/usr/bin/python
-
 import os
-import sys
-import configparser
+import logging
+import paTokenizer
 
-class Configuration:
-
-    __config = configparser.SafeConfigParser()
-
-    __mainSection = "main"
-    __valueOutput = "outputpath"
-    __valueInput = "inputfile"
-
-    def __init__(self):
-        self.__config.add_section( self.__mainSection )
-
-    def printConfiguration(self):
-        # List all contents
-        print("List all contents")
-        config = self.__config
-        for section in config.sections():
-            print(("Section: %s" % section))
-            for options in config.options(section):
-                print(("\t- %s:::%s:::%s" % (options,
-                                          config.get(section, options),
-                                          str(type(options)))))
-
-    def setOutputPath(self, path):
-        self.__config.set(self.__mainSection, self.__valueOutput, path)
-
-    def getOutputPath(self):
-        return self.__config.get(self.__mainSection, self.__valueOutput)
-
-    def setProtoPath(self, path):
-        self.__config.set(self.__mainSection, self.__valueInput, path)
-
-    def getProtoPath(self):
-        return self.__config.get(self.__mainSection, self.__valueInput)
-
-
-class ArgsParser:
-
-    config = Configuration()
-
-    def usage(self):
-
-        usage = """python protoargs.py -o <out DIR> -i PROTOFILE
-            out DIR         [mandatory] path to output directory
-            PROTOFILE       [mandatory] path to proto file
-            """
-        return usage
-
-    def parse(self, argv):
-        import getopt
-
-        dst = ""
-        proto = ""
-
-        try:
-            opts, args = getopt.getopt(argv,"o:i:")
-        except getopt.GetoptError:
-            print(self.usage())
-            sys.exit(2)
-
-        for opt, arg in opts:
-            if opt == '-h':
-                print(self.usage())
-                sys.exit()
-            elif opt in ("-o"):
-                dst = arg
-                self.config.setOutputPath(arg)
-            elif opt in ("-i"):
-                proto = arg
-                self.config.setProtoPath(arg)
-            else:
-                print("[ERR] Unknown argument" + arg)
-
-        if not dst or not proto:
-            print("[INF] destination is " + dst)
-            print("[INF] proto file path is " + proto)
-            print("[ERR] destination is empty or no proto file specified")
-            print(self.usage())
-            sys.exit(1)
-
-        print(self.config.printConfiguration())
 
 # GLOBAL DEFS ###################################3
 
-#class Protoargs:
-pa_main = "protoargs"
-pa_links = "protoargs_links"
-
-#class ProtoDirectives:
-pd_package = "package"
-pd_message = "message"
-pd_enum = "enum"
-pd_field = "field"
-pd_end = "}"
-
-#class ProtoFields:
-pf_required = "required"
-pf_optional = "optional"
-pf_repeated = "repeated"
-
 #class ProtoTypes:
+pt_float = "float"
+pt_double = "double"
 pt_int32 = "int32"
 pt_uint32 = "uint32"
 pt_int64 = "int64"
@@ -112,6 +16,8 @@ pt_bool = "bool"
 pt_string = "string"
 
 # c++ types
+cc_float = "float"
+cc_double = "double"
 cc_int32 = "int32_t"
 cc_uint32 = "uint32_t"
 cc_int64 = "int64_t"
@@ -121,200 +27,22 @@ cc_string = "std::string"
 
 # END GLOBALS ###################################3
 
-class ProtoToken:
-    directive = ""
-    field = ""
-    type = ""
-    name= ""
-    position = ""
-    value = ""
-    description = ""
-
-    def valid(self):
-        return bool(self.directive)
-
-    def __repr__(self):
-        return "(" + self.directive + "," + self.field + "," + self.type + "," + self.name + "," + self.position + "," + self.value + ",'" + self.description + "')"
-
-class ProtoTokenizer:
-
-    __tokens = [] # result of lines parsing
-
-    def getTokens(self):
-        return self.__tokens
-
-    # Exclude directive instances
-    def excludeDirective(self, directive, name):
-        if directive == pd_message or directive == pd_enum: # no other directive possible
-            tokens = self.__tokens
-            filteredTokens = []
-            skip = False;
-            for token in tokens:
-                if not skip:
-                    #print "[TST] " + str(token) + " Check: " + directive + ", " + name
-                    if directive == token.directive and name == token.name:
-                        skip = True # skipping, starting from current line
-                    #elif directive != token.directive:
-                    else:
-                        filteredTokens.append(token) # let the token stay
-                elif token.directive == pd_end:
-                    skip = False
-            self.__tokens = filteredTokens
-        return self
-
-    # Exclude unused structures from tokens
-    def excludeUnused(self):
-        tokens = self.__tokens
-        unusedTokens = []
-        for token in tokens:
-            if token.directive == pd_enum:
-                print("[WRN] enums are not supported, exclude " + token.name)
-                unusedTokens.apend(token)
-            elif token.directive == pd_message:
-                if token.name.find(pa_main) == -1 and token.name.find(pa_links) == -1: # Check for predefined messages
-                    print("[WRN] messages are not needed, exclude " + token.name)
-                    unusedTokens.append(token)
-
-        # removing structures
-        for unused in unusedTokens:
-            self.excludeDirective(unused.directive, unused.name)
-
-        return self
-
-    def getToken(self, directive, name):
-        found = False
-        tokens = self.__tokens
-        result = ProtoToken()
-        for token in tokens:
-            if token.directive == directive and token.name == name:
-                result = token
-                break
-        return result
-
-    def check(self): # Add more checks
-        print("-----------------------------------------------------")
-        # check if needed messages present
-        foundProtoargs = self.getToken(pd_message, pa_main).valid()
-        foundProtoargsLinks = self.getToken(pd_message, pa_links).valid()
-
-        print("[INF] " + pa_main + " message: " + str(foundProtoargs));
-        print("[INF] " + pa_links +" message: " + str(foundProtoargsLinks));
-        print("-----------------------------------------------------")
-
-        return foundProtoargs
-
-    # parse field line and return token for it
-    def createFieldToken(self, line):
-        line = line.replace("\t"," ");
-        chunks = line.split(" ")
-
-        token = ProtoToken()
-        token.directive = pd_field
-        token.field = chunks[0].strip()
-        token.type = chunks[1].strip()
-        token.name = chunks[2].strip()
-        token.position = chunks[4].replace(";","").strip()
-
-        # discover default value
-        nocomment = self.__removeComment(line)
-        if nocomment.find("]") != -1:
-            token.value = nocomment \
-                    .split("]")[0] \
-                    .split("[")[1] \
-                    .split("=")[1] \
-                    .strip()
-            if token.value[0] == '"': # remove " from string
-                token.value = token.value[1:len(token.value)-1]
-
-        # comment on the same line is our description
-        token.description = line.split(";")[1].strip()
-        token.description = token.description[2:len(token.description)].strip() # remove starting //
-
-        return token
-
-    def createPackageToken(self, line):
-        line = self.__removeComment(line)
-        token = ProtoToken()
-        token.directive = pd_package
-        token.name = line \
-                .replace(";","") \
-                .replace(pd_package,"") \
-                .strip()
-        return token
-
-    def __createMessageToken(self, line):
-        line = self.__removeComment(line)
-        token = ProtoToken()
-        token.directive = pd_message
-        token.name = line \
-                .replace(";","") \
-                .replace(pd_message,"") \
-                .strip()
-        return token
-
-    def __createEndToken(self, line):
-        token = ProtoToken()
-        token.directive = pd_end
-        return token
-
-    def __removeComment(self, line):
-        if line.find(";") == -1:
-            return self.__isEntireLineComment(line)
-        else:
-            return line.split(";")[0] + ";"
-
-    # remove what we think is a comment, and check if this entire line comment
-    def __isEntireLineComment(self, line):
-        fieldChunks = line.split("//")
-        return fieldChunks[0].strip()
-
-    def tokenize(self, data):
-        # tokenizing line by line
-        for line in data:
-            sline = line.strip() # make striped line
-            # remove what we think is a comment, and check if this entire line comment
-            # Note: we still need comments for fields, it is out field description
-            if self.__isEntireLineComment(sline):
-                if sline.find(pf_required) != -1 or \
-                   sline.find(pf_optional) != -1 or \
-                   sline.find(pf_repeated) != -1:
-                    print("[DBG] " + sline)
-                    token = self.createFieldToken(sline)
-                    self.__tokens.append(token)
-                elif sline.find(pd_package) != -1:
-                    print("[DBG] " + sline)
-                    token = self.createPackageToken(sline)
-                    self.__tokens.append(token)
-                elif sline.find(pd_message) != -1:
-                    print("[DBG] " + sline)
-                    token = self.__createMessageToken(sline)
-                    self.__tokens.append(token)
-                elif sline.find(pd_end) != -1:
-                    print("[DBG] " + sline)
-                    token = self.__createEndToken(sline)
-                    self.__tokens.append(token)
-
-        return self
-
-
-class CppGenerator:
+class Generator:
 
     __path = "" # path to proto file
-    __pbhPath = ""  # path to protobuf header file
     __pbhName = ""  # name of protobuf header file for include
     __ccPath = "" # path to source file
     __hPath = ""  # path to header file
     __cc = "" # source file content
     __h = ""  # header content
 
-    def __init__(self, path):
+    def __init__(self, path, dst):
         self.__path = path
-        base = os.path.splitext(path)[0]
+        filename = os.path.splitext( os.path.basename(path) )[0]
+        base = os.path.join(dst, filename)
         self.__hPath = base + ".pa.h"
         self.__ccPath = base + ".pa.cc"
-        self.__pbhPath = base + ".pb.h"
-        head, tail = os.path.split(self.__pbhPath)
-        self.__pbhName = tail
+        self.__pbhName = filename + ".pb.h"
 
     def getSourceFileData(self):
         return self.__cc
@@ -330,33 +58,35 @@ class CppGenerator:
 
     # load file entirely
     def loadFileData(self, path):
+        logging.info("Load file: '" + path + "'")
         try:
             with open(path, "r") as index:
                 lines = index.readlines()
                 index.close()
                 return lines
         except:
-            print("[ERR] Could not read file because of error")
+            logging.error("Could not read file '" + path + "' because of error")
             return ""
 
     def __saveFileData(self, path, data):
+        logging.info("Save file: '" + path + "'")
         try:
             with open(path, "w") as index:
                 index.write(data)
                 index.close()
                 return True;
         except:
-            print("[ERR] Could not write to file \"" + path + "\" because of error")
+            logging.error(" Could not write to file '" + path + "' because of error")
             return False;
 
     # parse proto file and generate c++ files
     def generate(self):
         #load proto file
-        data = self.loadFileData(path)
+        data = self.loadFileData(self.__path)
         result = len(data) != 0
         if result:
             # tokenize proto file data
-            tokenizer = ProtoTokenizer() \
+            tokenizer = paTokenizer.Tokenizer() \
                     .tokenize(data) \
                     .excludeUnused() \
 
@@ -366,7 +96,7 @@ class CppGenerator:
 
                 # DBG
                 for token in tokens:
-                    print("[DBG] " + str(token))
+                    logging.debug(str(token))
 
                 # generate souce code
                 self.__h = self.__generateHeaderFromTokens(tokens)
@@ -404,9 +134,13 @@ class CppGenerator:
             ccType = cc_bool
         if protoType == pt_string:
             ccType = cc_string
+        if protoType == pt_float:
+            ccType = cc_float
+        if protoType == pt_double:
+            ccType = cc_double
 
         # value may be repeated
-        if token.field == pf_repeated:
+        if token.field == paTokenizer.pf_repeated:
             ccType = "std::vector<" + ccType + ">"
 
         return ccType
@@ -417,13 +151,17 @@ class CppGenerator:
         # get correct type
         protoType = token.type
         if protoType == pt_int32:
-            stringConverter = "stoi"
+            stringConverter = "std::stoi"
         if protoType == pt_uint32:
-            stringConverter = "stoi"
+            stringConverter = "std::stoi"
         if protoType == pt_int64:
-            stringConverter = "stoll"
+            stringConverter = "std::stoll"
         if protoType == pt_uint64:
-            stringConverter = "stoll"
+            stringConverter = "std::stoll"
+        if protoType == pt_float:
+            stringConverter = "std::stof"
+        if protoType == pt_double:
+            stringConverter = "std::stof"
         if protoType == pt_bool:
             stringConverter = "0 != stoi"
         if protoType == pt_string:
@@ -447,8 +185,8 @@ class CppGenerator:
         tail = ""
         body = ""
         for token in tokens:
-            if token.directive == pd_package:
-                print("[DBG] " + str(token))
+            if token.directive == paTokenizer.pd_package:
+                logging.debug(str(token))
                 namespaces = token.name.split(".") #discover namespaces
                 for namespace in namespaces:
                     ns = namespace.strip()
@@ -539,8 +277,8 @@ class CppGenerator:
         tail = ""
         body = ""
         for token in tokens:
-            if token.directive == pd_package:
-                print("[DBG] " + str(token))
+            if token.directive == paTokenizer.pd_package:
+                logging.debug(str(token))
                 namespaces = token.name.split(".") #discover namespaces
                 for namespace in namespaces:
                     ns = namespace.strip()
@@ -613,7 +351,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
 
     # get token by type and name
     def __getToken(self, tokens, directive, name):
-        result = ProtoToken()
+        result = paTokenizer.ProtoToken()
         for token in tokens:
             if token.directive == directive and token.name == name:
                 result = token
@@ -625,12 +363,12 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         result = []
         start = False
         for token in tokens:
-            if token.directive == pd_message and token.name == pa_links:
+            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_links:
                 start = True
             elif start:
-                if token.directive == pd_end:
+                if token.directive == paTokenizer.pd_end:
                     break
-                elif token.directive == pd_field and token.value == name: # default link value should be the name of args
+                elif token.directive == paTokenizer.pd_field and token.value == name: # default link value should be the name of args
                     result.append(token)
         return result
 
@@ -639,7 +377,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         code = """
     cxxopts::Options options(program, "%DESCRIPTION%");
 """
-        token = self.__getToken(tokens, pd_message, pa_main)
+        token = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_main)
         if token.valid():
             code = code.replace("%DESCRIPTION%", token.description)
 
@@ -655,13 +393,13 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
 
         start = False
         for token in tokens:
-            if token.directive == pd_message and token.name == pa_main:
+            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
                 start = True
             elif start:
-                if token.directive == pd_end:
+                if token.directive == paTokenizer.pd_end:
                     break
-                elif token.directive == pd_field:
-                    isLinks = self.__getToken(tokens, pd_message, pa_links).valid()
+                elif token.directive == paTokenizer.pd_field:
+                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
                         if len(links) == 0:
@@ -669,7 +407,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
 
         # add dummy positional long args, in order to preserve usage output style
         for token in positional:
-            print("[DBG] create dummy positional field name as long arg name: " + str(token))
+            logging.debug("Create dummy positional field name as long arg name: " + str(token))
             # add cxxopts option
             prefix = "dummy-"
             code += "       "
@@ -679,7 +417,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                     .replace("%PTYPE%", token.type) \
                     .replace("%TYPE%", self.__convertToCCType(token)) \
                     .replace("%ARGNAME%", token.name) \
-                    .replace("%FREQUENCY%", pf_required.upper()) \
+                    .replace("%FREQUENCY%", paTokenizer.pf_required.upper()) \
 
             code += "\n"
 
@@ -699,24 +437,24 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
 
         start = False
         for token in tokens:
-            if token.directive == pd_message and token.name == pa_main:
+            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
                 start = True
             elif start:
-                if token.directive == pd_end:
+                if token.directive == paTokenizer.pd_end:
                     break
-                elif token.directive == pd_field:
+                elif token.directive == paTokenizer.pd_field:
 
                     # set template
                     t = template
-                    if token.field == pf_required:
+                    if token.field == paTokenizer.pf_required:
                         t = templateRequired
 
-                    isLinks = self.__getToken(tokens, pd_message, pa_links).valid()
+                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
                         if len(links) > 0:
                             # add all links as options
-                            print("[DBG] links found for: " + str(token) + "\n" + str(links))
+                            logging.debug("links found for: " + str(token) + "\n" + str(links))
                             options = ""
                             for link in links:
                                 if len(options) > 0 and len(link.name) > 1:
@@ -740,10 +478,10 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
 
                             code += "\n"
                         else:
-                            print("[DBG] positional arg found: " + str(token))
+                            logging.debug("positional arg found: " + str(token))
                             positional.append(token)
                     else:
-                        print("[DBG] convert main protoargs field name into long arg name: " + str(token))
+                        logging.debug("convert main protoargs field name into long arg name: " + str(token))
                         # add cxxopts option
                         code += "       "
                         code += t \
@@ -756,7 +494,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                                 .replace("%DEFAULT%", token.value)
                         code += "\n"
                 else:
-                    print("[WRN] unknown token inside protoargs structure: " + str(token))
+                    logging.warn("unknown token inside protoargs structure: " + str(token))
 
         # do not add positional parsing if no positional args registered
         if len(positional) > 0:
@@ -781,7 +519,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
             for pos in positional:
                 if posCode:
                     posCode += " "
-                if pos.field == pf_repeated:
+                if pos.field == paTokenizer.pf_repeated:
                     posCode += pos.name + " [" + pos.name + "...]" # psotional repeating, at least one should be present
                 else:
                     posCode += pos.name
@@ -861,14 +599,14 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         # fill proto object
         start = False
         for token in tokens:
-            if token.directive == pd_message and token.name == pa_main:
+            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
                 start = True
             elif start:
-                if token.directive == pd_end:
+                if token.directive == paTokenizer.pd_end:
                     break
-                elif token.directive == pd_field:
+                elif token.directive == paTokenizer.pd_field:
                     link = self.__convertToCCName(token.name) # default link
-                    isLinks = self.__getToken(tokens, pd_message, pa_links).valid()
+                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
                         if len(links) > 1:
@@ -877,7 +615,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                             link = self.__convertToArgName(links[0].name)
 
                     if (isLinks and len(links) > 0) or not isLinks: # avoid positional
-                        if token.field == pf_required: # this parameter should be present
+                        if token.field == paTokenizer.pf_required: # this parameter should be present
                             code += template \
                                     .replace("%ARGNAME%", link) \
                                     .replace("%PNAME%", token.name) \
@@ -913,14 +651,14 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         # fill proto object
         start = False
         for token in tokens:
-            if token.directive == pd_message and token.name == pa_main:
+            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
                 start = True
             elif start:
-                if token.directive == pd_end:
+                if token.directive == paTokenizer.pd_end:
                     break
-                elif token.directive == pd_field:
+                elif token.directive == paTokenizer.pd_field:
                     link = self.__convertToCCName(token.name) # default link
-                    isLinks = self.__getToken(tokens, pd_message, pa_links).valid()
+                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
                         if len(links) > 1:
@@ -929,7 +667,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                             link = self.__convertToArgName(links[0].name)
 
                     if (isLinks and len(links) > 0) or not isLinks: # avoid positional
-                        if token.field == pf_optional: # this parameter is optional
+                        if token.field == paTokenizer.pf_optional: # this parameter is optional
                             code += template \
                                     .replace("%ARGNAME%", link) \
                                     .replace("%TYPE%", self.__convertToCCType(token)) \
@@ -972,14 +710,14 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         # fill proto object
         start = False
         for token in tokens:
-            if token.directive == pd_message and token.name == pa_main:
+            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
                 start = True
             elif start:
-                if token.directive == pd_end:
+                if token.directive == paTokenizer.pd_end:
                     break
-                elif token.directive == pd_field:
+                elif token.directive == paTokenizer.pd_field:
                     link = self.__convertToCCName(token.name) # default link
-                    isLinks = self.__getToken(tokens, pd_message, pa_links).valid()
+                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
                         if len(links) > 1:
@@ -988,7 +726,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                             link = self.__convertToArgName(links[0].name)
 
                     if (isLinks and len(links) > 0) or not isLinks: # avoid positional
-                        if token.field == pf_repeated: # this parameter is optional and may be specified multiple times
+                        if token.field == paTokenizer.pf_repeated: # this parameter is optional and may be specified multiple times
                             code += template \
                                     .replace("%ARGNAME%", link) \
                                     .replace("%TYPE%", self.__convertToCCType(token)) \
@@ -1062,17 +800,17 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         start = False
         pos = 0
         for token in tokens:
-            if token.directive == pd_message and token.name == pa_main:
+            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
                 start = True
             elif start:
-                if token.directive == pd_end:
+                if token.directive == paTokenizer.pd_end:
                     break
-                elif token.directive == pd_field:
-                    isLinks = self.__getToken(tokens, pd_message, pa_links).valid()
+                elif token.directive == paTokenizer.pd_field:
+                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
                         if len(links) == 0: # process positional
-                            if token.field == pf_repeated: # this parameter should have at least one arg present, nothing is processed afterwards
+                            if token.field == paTokenizer.pf_repeated: # this parameter should have at least one arg present, nothing is processed afterwards
                                 code += templateRepeated \
                                         .replace("%ARGNAME%", token.name.upper()) \
                                         .replace("%CONVERTER%", self.__converterFromString(token)) \
@@ -1089,14 +827,3 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
 
         return code
 
-if __name__ == "__main__":
-    import sys
-
-    print("[INF] Parse arguments")
-    parser = ArgsParser()
-    parser.parse(sys.argv[1:])
-
-    print("[INF] Processing proto file " + parser.config.getProtoPath())
-    path = parser.config.getProtoPath()
-    generator = CppGenerator(path)
-    generator.generate()
