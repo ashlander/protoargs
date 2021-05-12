@@ -9,7 +9,7 @@ This documentation part shows c++ parser generation and usage based on existing 
 
 .. _cxxopts: https://github.com/jarro2783/cxxopts
 
-.. _main: ../../
+.. _main: https://github.com/ashlander/protoargs/tree/master
 
 If you need storing configuration file with args, you may use Protoconf_ to make your life easier.
 
