@@ -177,6 +177,8 @@ Let's take our first simple example (as a reminder *-p NUM* and *--param=NUM* ar
 
 Now what you need is the file ending with **_pa.py**, it contains interface you need. It will look like several functions whichyou should use. Note: namespaces are not used currently.
 
+**Note:** *-h/--help* arguments are predefined within the argparse_, so variant from proto file will be skipped, and warning message output
+
 .. code:: python
 
    def usage(program, description="")
@@ -199,8 +201,7 @@ Let's go for code:
    class ArgsParser:
 
        def parse(self, argv):
-           self.config = simple_pa.parse("schema", 
-                   "Test schema", argv)
+           self.config = simple_pa.parse("schema", "Test schema", argv)
 
    if __name__ == "__main__":
        parser = ArgsParser()
@@ -216,10 +217,166 @@ Well that should be simple enough to start your going.
 Complex Example
 ===============
 
-TBD
+Here comes something big. Current implementations allows us to make complex parsing easily. Like
+
+.. code:: bash
+
+   program --help
+   program create --help
+   program create [create arguments]
+   program copy --help
+   program copy [copy arguments]
+
+..
+
+The idea behind it is a little bit tricky, but it is working well enough.
+
+So first of all you need 3 *.proto* files with own command settings, plain **program**, **program create**, **program copy**.
+
+Here is *main*:
+
+.. code:: proto
+
+   syntax = "proto2";
+
+   package bsw.protoargs.main;
+
+   message protoargs
+   {
+       optional bool help = 1 [default = false];         // Print help and exit
+       required string COMMAND = 2;                      // Command (create, copy)
+   }//protoargs
+
+   message protoargs_links
+   {
+       optional string h = 11 [default = "help"];
+       optional string help = 12 [default = "help"];
+   }//protoargs
+
+..
+
+So here we do expect no or single argument for main program, it may be -h/--help or command. This limitation gives us advantage.
+
+Let's go for the rest proto files.
+
+For program create:
+
+.. code:: proto
+
+   syntax = "proto2";
+
+   package bsw.protoargs.main.create;
+
+   message protoargs
+   {
+       optional bool help = 1 [default = false];         // Print help and exit
+       optional uint64 size = 2 [default = 0];           // Size of the file
+       required string PATH = 3;                         // Path to file to create
+   }//protoargs
+
+   message protoargs_links
+   {
+       optional string h = 1 [default = "help"];
+       optional string help = 2 [default = "help"];
+       optional string s = 3 [default = "size"];
+       optional string size = 4 [default = "size"];
+   }//protoargs
+
+..
+
+For program copy:
+
+.. code:: proto
+
+   syntax = "proto2";
+
+   package bsw.protoargs.main.copy;
+
+   message protoargs
+   {
+       optional bool help = 1 [default = false];         // Print help and exit
+       optional bool recursive = 2 [default = false];    // Recursive copy
+       required string SRC = 3;                          // Path to source path
+       required string DST = 4;                          // Path to destination path
+   }//protoargs
+
+   message protoargs_links
+   {
+       optional string h = 1 [default = "help"];
+       optional string help = 2 [default = "help"];
+       optional string r = 3 [default = "recursive"];
+       optional string recursive = 4 [default = "recursive"];
+   }//protoargs
+
+..
+
+After generating all 3 files, let's think about these command parsing:
+
+.. code:: bash
+
+   program --help
+   program create --help
+
+..
+
+For the first iteration we need to parse with main program parser. But it is created to parse the first and not the second. It will fail on **program create --help**. So as far as we have limited us to 2 options we may parse first 2 options only.
+
+.. code:: python
+
+   class ArgsParser:
+
+       def parseCommand(self, argv):
+           self.config = multy_command_pa.parse("program", "Useful multi command", argv)
+
+   if __name__ == "__main__":
+       parser = ArgsParser()
+
+       parser.parseCommand(sys.argv[1:2])
+       print(parser.config)
+
+..
+
+Ok, we have discovered command, now that's time to parse. The only problem here is that we have positional argument (which is command) standing not at the end, so we can't create proper schema to parse. But as long as we found proper command we do not need it any more, so how about removing it from arguments.
+
+.. code:: python
+
+   class ArgsParser:
+
+       def parseCommand(self, argv):
+           self.config = multy_command_pa.parse("program", "Useful multi command", argv)
+
+       def parseCreate(self, argv):
+           self.config = multy_command_create_pa.parse("program create", "Useful create", argv)
+
+       def parseCopy(self, argv):
+           self.config = multy_command_copy_pa.parse("program copy", "Useful copy", argv)
+
+   if __name__ == "__main__":
+       parser = ArgsParser()
+
+       parser.parseCommand(sys.argv[1:2])
+       print(parser.config)
+
+       if (parser.config.COMMAND == "create"):
+           parser.parseCreate(sys.argv[2:])
+       elif (parser.config.COMMAND == "copy"):
+           parser.parseCopy(sys.argv[2:])
+       else:
+           sys.exit(1)
+       print(parser.config)
+
+..
 
 Extreme Usage
 =============
 
-TBD
+Sometimes people need some real complex argument parsing, like
+
+.. code:: bash
+
+   program [program options] command [command options]
+
+..
+
+Well, I have not tested it this way, but you may achieve it. The trick is you need to calculate number of *[program options]* manually. This way you can exclude needed number of arguments, and proceed as previous example.
 

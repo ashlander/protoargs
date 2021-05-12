@@ -5,7 +5,7 @@ message protoargs
     required string src     = 1;                        // Path to proto file with protoargs configuration
     required string dst     = 2;                        // Path to output directory, where parser will be placed.
 
-    optional string loglevel = 3 [default = "INFO"];    // Log level, default = INFO, possible values [ERROR|WARNING|INFO|DEBUG]
+    optional string loglevel = 3 [default = "INFO"];    // Log level, possible values [ERROR|WARNING|INFO|DEBUG]
 
     optional bool cpp       = 10 [default = false];     // Generate c++11 arguments parser (Note: you need generate files with protoc compiler additionally, so that parser will work). Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
     optional bool py        = 11 [default = false];     // Generate python arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.py]
