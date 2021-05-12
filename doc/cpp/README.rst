@@ -481,9 +481,3 @@ Proceed to Tests_.
 
 .. _Tests: ../../src/Tests/
 
-Help
-====
-
-The script was never perfect, just because author avoids edge cases does not make it usable for everyone. So it will be just great to receive feedbacks, features, bug reports and fixes. Thanks people.
-
-I may be not so fast with changes, sorry for that.

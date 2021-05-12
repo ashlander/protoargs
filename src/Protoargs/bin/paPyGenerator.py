@@ -324,29 +324,32 @@ def parse(program, description, argv, allowIncomplete=False):
                             logging.debug("positional arg found: " + str(token))
                             positional.append(token)
                     else:
-                        logging.debug("convert main protoargs field name into long arg name: " + str(token))
-                        code += "    "
-                        code += t \
-                                .replace("%OPTIONS%", self.__convertToOptName( self.__convertToArgName(token.name)) ) \
-                                .replace("%DESCRIPTION%",token.description) \
-                                .replace("%PTYPE%", token.type) \
-                                .replace("%ARGNAME%", token.name) \
-                                .replace("%FREQUENCY%", token.field.upper()) \
-                                .replace("%DEFAULT%", token.value) \
-                                .replace("%TYPE%", \
-                                (", type=" + self.__convertToPyType(token) if token.type != pt_bool else "") ) \
-                                .replace("%DEFAULTVAL%", \
-                                (", default=" + self.__convertToDefaultValue(token) if token.value and token.type != pt_bool else "") ) \
-                                .replace("%NARGS%", \
-                                (r', nargs="+"' if token.field == paTokenizer.pf_repeated else "") ) \
-                                .replace("%ACTIONS%", \
-                                (r', action="append"' if token.field == paTokenizer.pf_repeated else \
-                                (r', action="store_const"' if token.type == pt_bool else "")) ) \
-                                .replace("%CONST%", \
-                                (r', const=(not ' + self.__convertToDefaultValue(token) + ")" if token.type == pt_bool and token.value else \
-                                (r', const=True' if token.type == pt_bool else "")) ) \
+                        if token.name != "h" and token.name != "help": # exclude predefined args
+                            logging.debug("convert main protoargs field name into long arg name: " + str(token))
+                            code += "    "
+                            code += t \
+                                    .replace("%OPTIONS%", self.__convertToOptName( self.__convertToArgName(token.name)) ) \
+                                    .replace("%DESCRIPTION%",token.description) \
+                                    .replace("%PTYPE%", token.type) \
+                                    .replace("%ARGNAME%", token.name) \
+                                    .replace("%FREQUENCY%", token.field.upper()) \
+                                    .replace("%DEFAULT%", token.value) \
+                                    .replace("%TYPE%", \
+                                    (", type=" + self.__convertToPyType(token) if token.type != pt_bool else "") ) \
+                                    .replace("%DEFAULTVAL%", \
+                                    (", default=" + self.__convertToDefaultValue(token) if token.value and token.type != pt_bool else "") ) \
+                                    .replace("%NARGS%", \
+                                    (r', nargs="?"' if token.field == paTokenizer.pf_repeated else "") ) \
+                                    .replace("%ACTIONS%", \
+                                    (r', action="append"' if token.field == paTokenizer.pf_repeated else \
+                                    (r', action="store_const"' if token.type == pt_bool else "")) ) \
+                                    .replace("%CONST%", \
+                                    (r', const=(not ' + self.__convertToDefaultValue(token) + ")" if token.type == pt_bool and token.value else \
+                                    (r', const=True' if token.type == pt_bool else "")) ) \
 
-                        code += "\n"
+                            code += "\n"
+                        else:
+                            logging.warn("'" + token.name + "' conflicts with predefined argument");
                 else:
                     logging.warn("unknown token inside protoargs structure: " + str(token))
 
@@ -359,7 +362,11 @@ def parse(program, description, argv, allowIncomplete=False):
 """
         # add cxxopts parsing
         code += """
-    args = parser.parse_args(argv)
+    args = None
+    if allowIncomplete:
+        args = parser.parse_known_args(argv)
+    else:
+        args = parser.parse_args(argv)
 """
         return code
 
