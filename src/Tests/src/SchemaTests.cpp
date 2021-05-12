@@ -46,6 +46,8 @@
           , "--a-long-param", "somevalue" // inside pa.cc only '-a' is analized
           , "50" // paramG
           , "0" // bool paramG
+          , "0.5" // PARAM-FLOAT
+          , "0.7" // PARAM-DOUBLE
           , "pos1", "pos2", "pos3"
        };
        int argc = sizeof(argv)/sizeof(argv[0]);
@@ -63,6 +65,8 @@
           ,"-e", "valueE"
           , "50" // paramG
           , "0" // bool paramG
+          , "0.5" // PARAM-FLOAT
+          , "0.7" // PARAM-DOUBLE
           , "pos1", "pos2", "pos3"
        };
        int argc = sizeof(argv)/sizeof(argv[0]);
@@ -111,7 +115,9 @@
           ,"--j-long"
           , "50" // paramG
           , "0" // bool paramG
-          , "pos1", "pos2", "pos3"
+          , "0.5" // PARAM-FLOAT
+          , "0.7" // PARAM-DOUBLE
+          , "pos1", "pos2", "pos3" // paramH
        };
        int argc = sizeof(argv)/sizeof(argv[0]);
        schema::ProtoArgs arguments;
