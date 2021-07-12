@@ -3,6 +3,7 @@
 import os
 import sys
 import logging
+from tempfile import gettempdir
 
 import protoargs_pa
 import paLogger
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     parser.parse(sys.argv[1:])
 
     # initialize logger
-    paLogger.init(parser.config.loglevel, "/tmp");
+    paLogger.init(parser.config.loglevel, gettempdir());
     logging.info("Arguments parsed")
 
     # print configuration
