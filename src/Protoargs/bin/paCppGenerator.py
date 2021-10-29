@@ -605,7 +605,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                 if token.directive == paTokenizer.pd_end:
                     break
                 elif token.directive == paTokenizer.pd_field:
-                    link = self.__convertToCCName(token.name) # default link
+                    link = self.__convertToArgName(self.__convertToCCName(token.name)) # default link
                     isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
@@ -657,7 +657,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                 if token.directive == paTokenizer.pd_end:
                     break
                 elif token.directive == paTokenizer.pd_field:
-                    link = self.__convertToCCName(token.name) # default link
+                    link = self.__convertToArgName(self.__convertToCCName(token.name)) # default link
                     isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)
@@ -716,7 +716,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
                 if token.directive == paTokenizer.pd_end:
                     break
                 elif token.directive == paTokenizer.pd_field:
-                    link = self.__convertToCCName(token.name) # default link
+                    link = self.__convertToArgName(self.__convertToCCName(token.name)) # default link
                     isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
                     if isLinks:
                         links = self.__getLinks(tokens, token.name)

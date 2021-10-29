@@ -47,6 +47,10 @@
           , "--flags", "true"
           , "--flags", "false"
           , "-c", "flags should be true and false"
+          , "--o-underscore", "no underscore"
+          , "--r-underscore", "no underscore"
+          , "--a-underscore", "no underscore0"
+          , "--a-underscore", "no underscore1"
        };
        int argc = sizeof(argv)/sizeof(argv[0]);
        simple::ProtoArgs arguments;
@@ -62,6 +66,14 @@
        ASSERT_FALSE( config->flags(1) );
 
        ASSERT_EQ( "flags should be true and false", config->c() );
+
+       ASSERT_EQ( "no underscore", config->r_underscore() );
+       ASSERT_EQ( "no underscore", config->o_underscore() );
+
+       ASSERT_EQ( 2, config->a_underscore_size() );
+       ASSERT_EQ( "no underscore0", config->a_underscore(0) );
+       ASSERT_EQ( "no underscore1", config->a_underscore(1) );
+
     }
 
     // positional will be skipped
@@ -74,6 +86,7 @@
           , "--flags", "true"
           , "--flags", "false"
           , "-c", "flags should be true and false"
+          , "--r-underscore", "no underscore"
           , "positional_value"
           , "positional_value"
           , "positional_value"
