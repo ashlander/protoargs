@@ -269,6 +269,14 @@ And you should get *protoargs_pa.py* file inside */tmp* directory.
 
 Now go directly to specific manuals by clicking cppdoc_ or pythondoc_ for the in-code usage.
 
+License
+=======
+
+To clarify license:
+
+* If you include protoargs project or parts into your source code, that's fine, but, please tolerate BSD license.
+* All artifacts, which you get after protoargs scripts execution are under MIT license. No credits needed, just use them.
+
 Help
 ====
 
