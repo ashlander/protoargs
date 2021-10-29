@@ -1,13 +1,12 @@
 from conans import ConanFile, CMake, tools
 import os
 
-
 class ProtoconfConan(ConanFile):
     name = "protoargs"
     version = "0.1.0"
     license = "BSD 2-Clause License"
     author = "Andrii Zhuk <andrewzhuk@gmail.com>"
-    url = "<Package recipe repository url here, for issues about the package>"
+    url = "https://github.com/ashlander/protoargs.git"
     description = "Code generated C++11 command line option parser, based on cxxopts and protobuf configuration"
     topics = ("bsw", "args")
     settings = "os", "compiler", "build_type", "arch"
@@ -19,11 +18,24 @@ class ProtoconfConan(ConanFile):
             , "tags": [True,False]}
     default_options = "codecov=False" , "clangcheck=False" , "asancheck=False" , "tsancheck=False" , "usancheck=False", "tags=False"
     generators = "cmake"
-    build_requires = "boost/1.69.0@conan/stable", "gtest/1.8.1@bincrafters/stable"
-    requires = "protobuf/3.6.1@bincrafters/stable", "protoc_installer/3.6.1@bincrafters/stable"
+    build_requires = "boost/1.69.0", "gtest/[>=1.8.1]"
+    requires = "protobuf/[>=3.6.1]"
 
+    def isCI(self):
+        try:
+            ci = os.environ['CI_PIPELINE_ID']
+        except Exception as e:
+            ci = ""
+        return ci != ""
 
-    #def source(self): # TODO
+    def source(self):
+        # skip code download inside CI, just make a link
+        if self.isCI(): 
+            self.run("ln -s /builds/root/protoargs/src src")
+        else:
+            self.run("git clone https://github.com/ashlander/protoargs.git")
+            self.run("ln -s protoargs/src src")
+
 
     def build(self):
         cmake = CMake(self)

@@ -109,9 +109,9 @@ endif()
 
 # register protobuf
 if (WITH_CONAN)
-   set(PROJECT_PROTOBUF_COMMAND     ${CONAN_BIN_DIRS_PROTOC_INSTALLER}/protoc)
+    set(PROJECT_PROTOBUF_COMMAND     ${CONAN_BIN_DIRS_PROTOBUF}/protoc)
 else()
-   set(PROJECT_PROTOBUF_COMMAND     protoc)
+    set(PROJECT_PROTOBUF_COMMAND     protoc)
 endif()
 
 # ctags
