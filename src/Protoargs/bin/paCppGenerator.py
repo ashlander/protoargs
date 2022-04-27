@@ -375,7 +375,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
 
     def __cxxoptsProgramDescription(self, tokens):
         code = """
-    cxxopts::Options options(program, "%DESCRIPTION%");
+    cxxopts::Options options(program, R"_(%DESCRIPTION%)_");
 """
         token = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_main)
         if token.valid():
@@ -384,7 +384,7 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         return code
 
     def __cxxoptsPositionalOptions(self, tokens):
-        template = "(\"%OPTIONS%\", \"%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}\\n\", cxxopts::value<%TYPE%>(), \"--dummy-\")"
+        template = "(\"%OPTIONS%\", std::string(R\"_(%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%})_\") + \"\\n\", cxxopts::value<%TYPE%>(), \"--dummy-\")"
         code = """
     options
     .add_options()
@@ -427,8 +427,8 @@ protoargs* ProtoArgs::parse(const std::string& program, int argc, char* argv[], 
         return code
 
     def __cxxoptsProgramOptions(self, tokens):
-        template = "(\"%OPTIONS%\", \"%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:'%DEFAULT%'}\\n\", cxxopts::value<%TYPE%>(), \"[%ARGNAME%]\")"
-        templateRequired = "(\"%OPTIONS%\", \"%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}\\n\", cxxopts::value<%TYPE%>(), \"[%ARGNAME%]\")"
+        template = "(\"%OPTIONS%\", std::string(R\"_(%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:'%DEFAULT%'})_\") + \"\\n\", cxxopts::value<%TYPE%>(), \"[%ARGNAME%]\")"
+        templateRequired = "(\"%OPTIONS%\", std::string(R\"_(%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%})_\") + \"\\n\", cxxopts::value<%TYPE%>(), \"[%ARGNAME%]\")"
         code = """
     options
     .add_options()
