@@ -101,7 +101,7 @@ if (Python2_FOUND)
 else() # test if python v3
    find_package (Python3 COMPONENTS Interpreter)
    if (Python3_FOUND)
-      set(PROJECT_PROTOARGS_COMMAND       ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/Protoargs/bin/protoargs3.py)
+      set(PROJECT_PROTOARGS_COMMAND       ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/Protoargs/bin/protoargs.py)
    else() # assume 2nd version
       set(PROJECT_PROTOARGS_COMMAND       python ${PROJECT_SOURCE_DIR}/Protoargs/bin/protoargs.py) 
    endif()
