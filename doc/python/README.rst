@@ -26,7 +26,7 @@ Usage
 .. image:: ../../src/Protoargs/img/pythonschema.png
    :align: center
 
-First of all, you are interested in one single file in this project, python script located in bin_ directory.
+First of all, you are interested in python script file in this project, python scripts are located in bin_ directory.
 
 .. _bin: ../../src/Protoargs/bin/
 
@@ -175,7 +175,7 @@ Let's take our first simple example (as a reminder *-p NUM* and *--param=NUM* ar
 
 ..
 
-Now what you need is the file ending with **_pa.py**, it contains interface you need. It will look like several functions whichyou should use. Note: namespaces are not used currently.
+Now what you need is the file ending with **_pa.py**, it contains interface you need. It will look like several functions which you may use. Note: namespaces are not used currently.
 
 **Note:** *-h/--help* arguments are predefined within the argparse_, so variant from proto file will be skipped, and warning message output
 

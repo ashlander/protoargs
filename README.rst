@@ -5,7 +5,7 @@ Program usually starts from argument parsing, configuration file creation and co
 
 This project should make it easier and less time consuming to work with arguments. So the brand new project could be started faster, it allows easy parameters extension, so complex command branches may be as easy as change configuration. It should be simple to code as well.
 
-This project, with time, may have new programming languages support, so you will not need to study multiple documentations, know just one - configuration creation rules.
+This project, with time, may have new programming languages support, so you will not need to study multiple documentations, know just one - **configuration creation rules**.
 
 So if you need flexible and easy way NOT to write argument parser and automate usage output, do want to rely on configuration rather than code - welcome, you are in the right spot.
 
@@ -17,13 +17,14 @@ Description
 
 **Protoargs** is python proto file transpiler, which generates arguments parser and configuration ready in-code structures using protobuf_ configuration.
 
-The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11** and **python** are supported.
+The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python** and **rust** are supported.
 
-First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_ or pythondoc_ for the in-code usage.
+First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
 
 .. _protobuf: https://github.com/protocolbuffers/protobuf
 .. _cppdoc: doc/cpp/
 .. _pythondoc: doc/python/
+.. _rustdoc: doc/rust/
 
 Configuration File Rules
 ========================
@@ -267,7 +268,7 @@ And you should get *protoargs_pa.py* file inside */tmp* directory.
 
 ..
 
-Now go directly to specific manuals by clicking cppdoc_ or pythondoc_ for the in-code usage.
+Now go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
 
 License
 =======

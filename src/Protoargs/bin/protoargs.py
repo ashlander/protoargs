@@ -9,6 +9,7 @@ import protoargs_pa
 import paLogger
 import paCppGenerator
 import paPyGenerator
+import paRustGenerator
 
 class ArgsParser:
 
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     # print configuration
     logging.debug(parser.config)
 
-    if parser.config.cpp or parser.config.py:
+    if parser.config.cpp or parser.config.py or parser.config.rust:
         path = parser.config.src
         dst = parser.config.dst
 
@@ -43,6 +44,11 @@ if __name__ == "__main__":
         if parser.config.py:
             logging.info("Generate python parser from proto file '" + path + "'")
             generator = paPyGenerator.Generator(path, dst)
+            generator.generate()
+
+        if parser.config.rust:
+            logging.info("Generate rust parser from proto file '" + path + "'")
+            generator = paRustGenerator.Generator(path, dst)
             generator.generate()
 
     else:
