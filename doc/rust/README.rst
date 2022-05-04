@@ -13,6 +13,7 @@ This documentation part shows rust parser generation and usage based on existing
 **PROS**:
 
 + Creates rust args parser using clap_.
++ As parsing result return ready-to-use configuration instance with correct type fields
 + Simplifies creation even complex commands like 'command subcommand [subcommand_args]'
 
 **CONS**:
@@ -38,7 +39,7 @@ First of all, you are interested in python script file in this project, python s
 
 ..
 
-You should get 1 file as result: **_pa.rs**. Attach it to your project and now you are ready to move forward.
+You should get 1 file as result: **_pa.rs**. Attach it to your project and now you are ready to move forward. 
 
 Example of Usage Output
 =======================
@@ -187,7 +188,7 @@ Now what you need is the file ending with **_pa.rs**, it contains interface you 
 
 They are quite clear, **usage** outputs help message, and the **parse** parses arguments and outputs filled strong typed structure instance. Both accept **program name** and **description** which you want to see in help, as long as **parse** method may call **usage** internally if something goes wrong.
 
-**allow_incomplete** option, if set to true, will return all successfully parsed arguments ignoring failed ones, like missing required arguments, but if will still return error if type mismatch happens.
+There are some other parse functions containing **allow_incomplete** option, if set to true, will return all successfully parsed arguments ignoring failed ones, like missing required arguments, but if will still return error if type mismatch happens.
 
 Let's go for code:
 
