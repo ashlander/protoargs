@@ -93,7 +93,7 @@ Let's start from simple one.
         optional bool who_am_i = 3;                     // Show custom user message and exit, it is transformed into --who-am-i long argument
         optional uint p = 4 [default = 10];             // Integer param with default value,  it is transformed into -p short argument, even if not specified it will return with value 10
         optional uint32 param = 5 [default = 10];       // Integer param with default value,  it is transformed into --param short argument, even if not specified it will return with value 10
-        optional string UPCASE = 6 [default = "Test"];  // Integer param with default value,  it is transformed into --upcase long argument, even if not specified it will return with value "Test"
+        optional string UPCASE = 6 [default = "Test"];  // String param with default value,  it is transformed into --upcase long argument, even if not specified it will return with value "Test"
     }//protoargs
 
 ..
@@ -223,7 +223,7 @@ Positional argument may be defined only using both **protoargs** and **protoargs
 Usage
 =====
 
-First of all, you are interested in one single file in this project, python script located in bin_ directory, called *protoargs.py*.
+First of all, you are interested in script file in this project, python script located in bin_ directory, called *protoargs.py*.
 
 Now, when **protoargs** supports **python** arguments parser generation, protoargs script uses "dogfooding" model - uses self generated arguments parser for itself (see *protoargs.proto* inside bin_ directory).
 
@@ -233,28 +233,27 @@ So here is usage you will get with *-h/--help*.
 
 .. code:: bash
 
-    usage: python protoargs.py [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py]
-
-    Protoargs program generates command line arguments parsers, using proto file
-    as configuration.
-
+    usage: protoargs [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py] [--rust]
+    
+    Protoargs program generates command line arguments parsers, using proto file as configuration.
+    
     optional arguments:
       -h, --help           show this help message and exit
       -i src               Path to proto file with protoargs configuration
                            {REQUIRED,type:string,default:""}
       -o dst               Path to output directory, where parser will be placed.
                            {REQUIRED,type:string,default:""}
-      --loglevel loglevel  Log level, default = INFO, possible values
-                           [ERROR|WARNING|INFO|DEBUG]
+      --loglevel loglevel  Log level, possible values [ERROR|WARNING|INFO|DEBUG]
                            {OPTIONAL,type:string,default:"INFO"}
-      --cpp                Generate c++11 arguments parser (Note: you need
-                           generate files with protoc compiler additionally, so
-                           that parser will work). Parser will have name of proto
-                           file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
+      --cpp                Generate c++11 arguments parser (Note: you need generate files with protoc
+                           compiler additionally, so that parser will work). Parser will have name of
+                           proto file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
                            {OPTIONAL,type:bool,default:"false"}
-      --py                 Generate python arguments parser. Parser will have name
-                           of proto file name, e.g.
-                           [protoargs.proto]->[protoargs_pa.py]
+      --py                 Generate python arguments parser. Parser will have name of proto file name,
+                           e.g. [protoargs.proto]->[protoargs_pa.py]
+                           {OPTIONAL,type:bool,default:"false"}
+      --rust               Generate rust arguments parser. Parser will have name of proto file name,
+                           e.g. [protoargs.proto]->[protoargs_pa.rs]
                            {OPTIONAL,type:bool,default:"false"}
 
 ..
