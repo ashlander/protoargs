@@ -161,11 +161,11 @@ class Generator:
 def prepareOptions(program, description):
 """
         # register arguments
-        body += self.__cxxoptsProgramDescription(tokens)
+        body += self.__argparseProgramDescription(tokens)
 
-        body += self.__cxxoptsProgramOptions(tokens)
+        body += self.__argparseProgramOptions(tokens)
 
-        body += self.__cxxoptsPositionalOptions(tokens)
+        body += self.__argparsePositionalOptions(tokens)
 
         body += """
     return parser
@@ -182,8 +182,8 @@ def usage(program, description=""):
         body += """
 def parse(program, description, argv, allowIncomplete=False):
 """
-        # add arguments parsing using cxxopts
-        body += self.__cxxoptsParsingBegin(tokens)
+        # add arguments parsing using argparse
+        body += self.__argparseParsingBegin(tokens)
 
         body += """
     return args;
@@ -215,7 +215,7 @@ def parse(program, description, argv, allowIncomplete=False):
         return result
 
 
-    def __cxxoptsProgramDescription(self, tokens):
+    def __argparseProgramDescription(self, tokens):
         code = """
     parser = argparse.ArgumentParser(description=description, prog=program)
 """
@@ -226,7 +226,7 @@ def parse(program, description, argv, allowIncomplete=False):
         code += "\n"
         return code
 
-    def __cxxoptsPositionalOptions(self, tokens):
+    def __argparsePositionalOptions(self, tokens):
         template = r'parser.add_argument(r"""%OPTIONS%""", type=%TYPE%, %NARGS% help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}""")'
         code = ""
         positional = []
@@ -262,7 +262,7 @@ def parse(program, description, argv, allowIncomplete=False):
 
         return code
 
-    def __cxxoptsProgramOptions(self, tokens):
+    def __argparseProgramOptions(self, tokens):
         template = r'parser.add_argument(r"""%OPTIONS%""", help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %TYPE% %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
         templateRequired = r'parser.add_argument(r"""%OPTIONS%""", required=True, help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %TYPE% %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
         code = ""
@@ -356,11 +356,11 @@ def parse(program, description, argv, allowIncomplete=False):
         code += "\n"
         return code
 
-    def __cxxoptsParsingBegin(self, tokens):
+    def __argparseParsingBegin(self, tokens):
         code = """
     parser = prepareOptions(program, description)
 """
-        # add cxxopts parsing
+        # add argparse parsing
         code += """
     args = None
     if allowIncomplete:

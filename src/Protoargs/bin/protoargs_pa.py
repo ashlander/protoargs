@@ -10,6 +10,7 @@ def prepareOptions(program, description):
     parser.add_argument(r"""--loglevel""", help=r"""Log level, possible values [ERROR|WARNING|INFO|DEBUG] {OPTIONAL,type:string,default:"INFO"}""", metavar=r"""loglevel""", dest=r"""loglevel""" , type=str   , default=r"""INFO""" )
     parser.add_argument(r"""--cpp""", help=r"""Generate c++11 arguments parser (Note: you need generate files with protoc compiler additionally, so that parser will work). Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs.pa.cc] {OPTIONAL,type:bool,default:"false"}""", metavar=r"""cpp""", dest=r"""cpp"""   , action="store_const"  , const=(not False))
     parser.add_argument(r"""--py""", help=r"""Generate python arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.py] {OPTIONAL,type:bool,default:"false"}""", metavar=r"""py""", dest=r"""py"""   , action="store_const"  , const=(not False))
+    parser.add_argument(r"""--rust""", help=r"""Generate rust arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.rs] {OPTIONAL,type:bool,default:"false"}""", metavar=r"""rust""", dest=r"""rust"""   , action="store_const"  , const=(not False))
 
 
     return parser

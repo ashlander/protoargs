@@ -5,7 +5,7 @@ Program usually starts from argument parsing, configuration file creation and co
 
 This project should make it easier and less time consuming to work with arguments. So the brand new project could be started faster, it allows easy parameters extension, so complex command branches may be as easy as change configuration. It should be simple to code as well.
 
-This project, with time, may have new programming languages support, so you will not need to study multiple documentations, know just one - configuration creation rules.
+This project, with time, may have new programming languages support, so you will not need to study multiple documentations, know just one - **configuration creation rules**.
 
 So if you need flexible and easy way NOT to write argument parser and automate usage output, do want to rely on configuration rather than code - welcome, you are in the right spot.
 
@@ -17,13 +17,14 @@ Description
 
 **Protoargs** is python proto file transpiler, which generates arguments parser and configuration ready in-code structures using protobuf_ configuration.
 
-The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11** and **python** are supported.
+The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python** and **rust** are supported.
 
-First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_ or pythondoc_ for the in-code usage.
+First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
 
 .. _protobuf: https://github.com/protocolbuffers/protobuf
 .. _cppdoc: doc/cpp/
 .. _pythondoc: doc/python/
+.. _rustdoc: doc/rust/
 
 Configuration File Rules
 ========================
@@ -92,7 +93,7 @@ Let's start from simple one.
         optional bool who_am_i = 3;                     // Show custom user message and exit, it is transformed into --who-am-i long argument
         optional uint p = 4 [default = 10];             // Integer param with default value,  it is transformed into -p short argument, even if not specified it will return with value 10
         optional uint32 param = 5 [default = 10];       // Integer param with default value,  it is transformed into --param short argument, even if not specified it will return with value 10
-        optional string UPCASE = 6 [default = "Test"];  // Integer param with default value,  it is transformed into --upcase long argument, even if not specified it will return with value "Test"
+        optional string UPCASE = 6 [default = "Test"];  // String param with default value,  it is transformed into --upcase long argument, even if not specified it will return with value "Test"
     }//protoargs
 
 ..
@@ -222,7 +223,7 @@ Positional argument may be defined only using both **protoargs** and **protoargs
 Usage
 =====
 
-First of all, you are interested in one single file in this project, python script located in bin_ directory, called *protoargs.py*.
+First of all, you are interested in script file in this project, python script located in bin_ directory, called *protoargs.py*.
 
 Now, when **protoargs** supports **python** arguments parser generation, protoargs script uses "dogfooding" model - uses self generated arguments parser for itself (see *protoargs.proto* inside bin_ directory).
 
@@ -232,28 +233,27 @@ So here is usage you will get with *-h/--help*.
 
 .. code:: bash
 
-    usage: python protoargs.py [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py]
-
-    Protoargs program generates command line arguments parsers, using proto file
-    as configuration.
-
+    usage: protoargs [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py] [--rust]
+    
+    Protoargs program generates command line arguments parsers, using proto file as configuration.
+    
     optional arguments:
       -h, --help           show this help message and exit
       -i src               Path to proto file with protoargs configuration
                            {REQUIRED,type:string,default:""}
       -o dst               Path to output directory, where parser will be placed.
                            {REQUIRED,type:string,default:""}
-      --loglevel loglevel  Log level, default = INFO, possible values
-                           [ERROR|WARNING|INFO|DEBUG]
+      --loglevel loglevel  Log level, possible values [ERROR|WARNING|INFO|DEBUG]
                            {OPTIONAL,type:string,default:"INFO"}
-      --cpp                Generate c++11 arguments parser (Note: you need
-                           generate files with protoc compiler additionally, so
-                           that parser will work). Parser will have name of proto
-                           file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
+      --cpp                Generate c++11 arguments parser (Note: you need generate files with protoc
+                           compiler additionally, so that parser will work). Parser will have name of
+                           proto file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
                            {OPTIONAL,type:bool,default:"false"}
-      --py                 Generate python arguments parser. Parser will have name
-                           of proto file name, e.g.
-                           [protoargs.proto]->[protoargs_pa.py]
+      --py                 Generate python arguments parser. Parser will have name of proto file name,
+                           e.g. [protoargs.proto]->[protoargs_pa.py]
+                           {OPTIONAL,type:bool,default:"false"}
+      --rust               Generate rust arguments parser. Parser will have name of proto file name,
+                           e.g. [protoargs.proto]->[protoargs_pa.rs]
                            {OPTIONAL,type:bool,default:"false"}
 
 ..
@@ -267,7 +267,7 @@ And you should get *protoargs_pa.py* file inside */tmp* directory.
 
 ..
 
-Now go directly to specific manuals by clicking cppdoc_ or pythondoc_ for the in-code usage.
+Now go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
 
 License
 =======
