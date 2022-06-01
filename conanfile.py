@@ -18,7 +18,7 @@ class ProtoconfConan(ConanFile):
             , "tags": [True,False]}
     default_options = "codecov=False" , "clangcheck=False" , "asancheck=False" , "tsancheck=False" , "usancheck=False", "tags=False"
     generators = "cmake"
-    build_requires = "boost/1.69.0", "gtest/[>=1.8.1]"
+    build_requires = "boost/[>=1.69.0]", "gtest/[>=1.8.1]"
     requires = "protobuf/[>=3.6.1]"
 
     def isCI(self):
