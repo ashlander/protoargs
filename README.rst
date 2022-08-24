@@ -19,13 +19,13 @@ Description
 
 The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python**, **rust** and **go** are supported.
 
-First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godock_ for the in-code usage.
+First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godoc_ for the in-code usage.
 
 .. _protobuf: https://github.com/protocolbuffers/protobuf
 .. _cppdoc: doc/cpp/
 .. _pythondoc: doc/python/
 .. _rustdoc: doc/rust/
-.. _godoc: doc/rust/
+.. _godoc: doc/go/
 
 Configuration File Rules
 ========================
@@ -268,7 +268,7 @@ And you should get *protoargs_pa.py* file inside */tmp* directory.
 
 ..
 
-Now go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godock_ for the in-code usage.
+Now go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godoc_ for the in-code usage.
 
 License
 =======
