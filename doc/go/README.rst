@@ -51,55 +51,55 @@ Suppose we have such a proto file (do not be afraid, this is just to show you po
 
 .. code:: proto
 
-syntax = "proto2";
-
-package bsw.protoargs.schema;
-
-message dummy // this message is present but will be ignored
-{
-    optional string param1 = 1 [default = "default"]; // String param option with default value
-    optional uint32 param2 = 2 [default = 10];        // Integer param with default value
-    optional int32 param3 = 3;                        // Integer param without default value
-    optional float param4 = 4;                        // Float param without default value
-}
-
-message protoargs
-{
-    optional string paramA = 1 [default = "// tricky default value"];      // String param option with default value. Note: this comment will be taken as description
-    optional uint32 paramB = 2 [default = 10];        // Integer param with default value
-    optional int32 paramC = 3;                        // Integer param without default value. Avoid new lines they are rendered not correctly in help. Words will be transfered to new line anyway
-    optional float paramD = 4;                        // Float param without default value
-    required string paramE = 5;                       // String param which should be anyway
-    repeated int32 paramF = 6;                        // Integer param which may encounter multiple times
-    required uint64 PARAMG = 7;                       // Positional integer param, positional param is always \"required\"
-    required bool P_A_R_A_M_G_2 = 8;                  // Positional boolean param, positional param is always \"required\", Note: param set - true, missing - false
-    optional bool param_I = 9 [default = true];       // Boolean arg with default value (despite it is declared after positional args, that is not a problem)
-    optional bool param_J = 10;                       // Boolean arg without default value
-    optional float PARAM_FLOAT = 15;                  // Positional float param
-    optional double PARAM_DOUBLE = 16;                // Positional double param
-    repeated string PARAMH = 11;                      // Positional repeating string params, there may be only one repeating positional param
-    optional bool printHelp = 12;                     // Print help and exit
-    optional float paramFloat = 13;                   // Float param
-    optional double paramDouble = 14;                 // Double param
-}//protoargs
-
-message protoargs_links
-{
-    optional string a_long_param = 1 [default = "paramA"];
-    optional string a = 2 [default = "paramA"];
-    optional string b_long_param = 3 [default = "paramB"];
-    optional string c = 4 [default = "paramC"];
-    optional string c_long_param = 5 [default = "paramC"];
-    optional string d_long_param = 6 [default = "paramD"];
-    optional string e = 7 [default = "paramE"];
-    optional string f = 8 [default = "paramF"];
-    optional string i = 9 [default = "param_I"];
-    optional string j_long = 10 [default = "param_J"];
-    optional string h = 11 [default = "printHelp"];
-    optional string help = 12 [default = "printHelp"];
-    optional string k = 13 [default = "paramFloat"];
-    optional string l = 14 [default = "paramDouble"];
-}//protoargs
+    syntax = "proto2";
+    
+    package bsw.protoargs.schema;
+    
+    message dummy // this message is present but will be ignored
+    {
+        optional string param1 = 1 [default = "default"]; // String param option with default value
+        optional uint32 param2 = 2 [default = 10];        // Integer param with default value
+        optional int32 param3 = 3;                        // Integer param without default value
+        optional float param4 = 4;                        // Float param without default value
+    }
+    
+    message protoargs
+    {
+        optional string paramA = 1 [default = "// tricky default value"];      // String param option with default value. Note: this comment will be taken as description
+        optional uint32 paramB = 2 [default = 10];        // Integer param with default value
+        optional int32 paramC = 3;                        // Integer param without default value. Avoid new lines they are rendered not correctly in help. Words will be transfered to new line anyway
+        optional float paramD = 4;                        // Float param without default value
+        required string paramE = 5;                       // String param which should be anyway
+        repeated int32 paramF = 6;                        // Integer param which may encounter multiple times
+        required uint64 PARAMG = 7;                       // Positional integer param, positional param is always \"required\"
+        required bool P_A_R_A_M_G_2 = 8;                  // Positional boolean param, positional param is always \"required\", Note: param set - true, missing - false
+        optional bool param_I = 9 [default = true];       // Boolean arg with default value (despite it is declared after positional args, that is not a problem)
+        optional bool param_J = 10;                       // Boolean arg without default value
+        optional float PARAM_FLOAT = 15;                  // Positional float param
+        optional double PARAM_DOUBLE = 16;                // Positional double param
+        repeated string PARAMH = 11;                      // Positional repeating string params, there may be only one repeating positional param
+        optional bool printHelp = 12;                     // Print help and exit
+        optional float paramFloat = 13;                   // Float param
+        optional double paramDouble = 14;                 // Double param
+    }//protoargs
+    
+    message protoargs_links
+    {
+        optional string a_long_param = 1 [default = "paramA"];
+        optional string a = 2 [default = "paramA"];
+        optional string b_long_param = 3 [default = "paramB"];
+        optional string c = 4 [default = "paramC"];
+        optional string c_long_param = 5 [default = "paramC"];
+        optional string d_long_param = 6 [default = "paramD"];
+        optional string e = 7 [default = "paramE"];
+        optional string f = 8 [default = "paramF"];
+        optional string i = 9 [default = "param_I"];
+        optional string j_long = 10 [default = "param_J"];
+        optional string h = 11 [default = "printHelp"];
+        optional string help = 12 [default = "printHelp"];
+        optional string k = 13 [default = "paramFloat"];
+        optional string l = 14 [default = "paramDouble"];
+    }//protoargs
 
 ..
 
