@@ -14,6 +14,10 @@ This documentation part shows go parser generation and usage based on existing c
 
 + Creates go args parser using flag_.
 + Flag is standard package available
++ Required and optional arguments
++ Repeated arguments
++ Positional arguments
++ Usage includes positional arguments block
 + Simplifies creation even complex commands like 'command subcommand [subcommand_args]'
 
 **CONS**:
@@ -22,7 +26,7 @@ This documentation part shows go parser generation and usage based on existing c
 
 **LIMITATIONS**:
 
-- Nonpositional boolean flags like '--flag --flag --flag' are not supported, use '--flag=true --flag=false --flag=true' instead
+- Nonpositional repeated boolean flags like '--flag --flag --flag' are not supported, use '--flag=true --flag=false --flag=true' instead
 
 Usage
 =====
@@ -195,7 +199,7 @@ Now what you need is the file ending with **_pa.go**, it contains interface you 
 
 They are quite clear, **Usage** outputs help message, and the **Parse** parses arguments. Both accept program name and description which you want to see in help, as long as **Parse** method may call **Usage** internally if something goes wrong.
 
-**allow_incomplete** option if set to true, will return all successfully parsed arguments ignoring failed ones, which is useful to search for **--help** or **--version** arguments, because with required fields missing parser will produce error. On error usage will be displayed automatically with the error description.
+**allow_incomplete** option if set to true, will return all successfully parsed arguments ignoring failed ones, which is useful to search for **--help** or **--version** arguments, because with required fields missing, parser will produce error. On error, usage will be displayed automatically with the error description.
 
 Let's go for code:
 
@@ -208,7 +212,7 @@ Let's go for code:
 
     func main() {
         { // looking only for help, avoid error checks
-            config, err := simple_pa.Parse(`program`, `description`, true)
+            config, _ := simple_pa.Parse(`program`, `description`, true)
 
             if config.Arghelp.IsSet() {
                 fmt.Println( simple_pa.Usage(`program`, `description`) )
@@ -367,7 +371,7 @@ For the first iteration we need to parse with main program parser. But it is cre
 
         { // looking only for help, avoid error checks
             // limit arguments list to 2 arguments
-            config, err := multy_command_pa.ParseExt(program, argv[:2], description, true)
+            config, _ := multy_command_pa.ParseExt(program, argv[:2], description, true)
 
             if config.Arghelp.IsSet() {
                 fmt.Println( multy_command_pa.Usage(program, description) )
@@ -419,7 +423,7 @@ Ok, we have discovered command, now that's time for subcommand parsing. The only
         if command == "create" {
             description = "create files command"
             { // looking only for help, avoid error checks
-                config, err := multy_command_create_pa.ParseExt(program, argv_nocmd, description, true)
+                config, _ := multy_command_create_pa.ParseExt(program, argv_nocmd, description, true)
 
                 if config.Arghelp.IsSet() {
                     fmt.Println( multy_command_create_pa.Usage(program, description) )
