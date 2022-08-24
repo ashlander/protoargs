@@ -17,9 +17,9 @@ Description
 
 **Protoargs** is python proto file transpiler, which generates arguments parser and configuration ready in-code structures using protobuf_ configuration.
 
-The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python** and **rust** are supported.
+The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python**, **rust** and **go** are supported.
 
-First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
+First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or `Go documentation<doc/go/>`_ for the in-code usage.
 
 .. _protobuf: https://github.com/protocolbuffers/protobuf
 .. _cppdoc: doc/cpp/
@@ -267,7 +267,7 @@ And you should get *protoargs_pa.py* file inside */tmp* directory.
 
 ..
 
-Now go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
+Now go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or `Go documentation<doc/go/>`_ for the in-code usage.
 
 License
 =======
