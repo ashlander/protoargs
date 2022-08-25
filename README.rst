@@ -234,9 +234,11 @@ So here is usage you will get with *-h/--help*.
 
 .. code:: bash
 
-    usage: protoargs [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py] [--rust]
+    usage: protoargs [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py]
+                     [--rust] [--go]
     
-    Protoargs program generates command line arguments parsers, using proto file as configuration.
+    Protoargs program generates command line arguments parsers, using proto file
+    as configuration.
     
     optional arguments:
       -h, --help           show this help message and exit
@@ -246,15 +248,22 @@ So here is usage you will get with *-h/--help*.
                            {REQUIRED,type:string,default:""}
       --loglevel loglevel  Log level, possible values [ERROR|WARNING|INFO|DEBUG]
                            {OPTIONAL,type:string,default:"INFO"}
-      --cpp                Generate c++11 arguments parser (Note: you need generate files with protoc
-                           compiler additionally, so that parser will work). Parser will have name of
-                           proto file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
+      --cpp                Generate c++11 arguments parser (Note: you need
+                           generate files with protoc compiler additionally, so
+                           that parser will work). Parser will have name of proto
+                           file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
                            {OPTIONAL,type:bool,default:"false"}
-      --py                 Generate python arguments parser. Parser will have name of proto file name,
-                           e.g. [protoargs.proto]->[protoargs_pa.py]
+      --py                 Generate python arguments parser. Parser will have name
+                           of proto file name, e.g.
+                           [protoargs.proto]->[protoargs_pa.py]
                            {OPTIONAL,type:bool,default:"false"}
-      --rust               Generate rust arguments parser. Parser will have name of proto file name,
-                           e.g. [protoargs.proto]->[protoargs_pa.rs]
+      --rust               Generate rust arguments parser. Parser will have name
+                           of proto file name, e.g.
+                           [protoargs.proto]->[protoargs_pa.rs]
+                           {OPTIONAL,type:bool,default:"false"}
+      --go                 Generate go arguments parser. Parser will have name of
+                           proto file name, e.g.
+                           [protoargs.proto]->[protoargs_pa.go]
                            {OPTIONAL,type:bool,default:"false"}
 
 ..
