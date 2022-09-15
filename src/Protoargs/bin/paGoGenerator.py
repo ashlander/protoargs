@@ -159,7 +159,15 @@ class Generator:
 #)
 #
 #"""
-        code = """
+        code = r"""
+/// If flag was found among provided arguments
+///
+/// # Arguments
+///
+/// * `flags` - flag specific FlagSet, see PrepareOptions for details
+/// * `name` - name of flag to search
+///
+/// returns true if flag was present among provided arguments
 func isFlagPassed(flags *flag.FlagSet, name string) bool {
     found := false
     flags.Visit(func(f *flag.Flag) {
@@ -169,20 +177,26 @@ func isFlagPassed(flags *flag.FlagSet, name string) bool {
     })
     return found
 }
+
+/***************************************************************************\
+// Option types
+\***************************************************************************/
+
 """
 
         types = [go_string, go_bool, go_int32, go_uint32, go_int64, go_uint64, go_float, go_double]
         for gotype in types:
-            code += """
+            code += r"""
 type (
     %Type%Value struct { // A %type% value for %Type%Option interface.
-        Val %type% // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val %type% // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option %Type%Value) Get() %type% { return option.Val }
-func (option %Type%Value) IsSet() bool { return option.Present }
+func (option %Type%Value) Get() %type% { return option.val }
+func (option %Type%Value) IsSet() bool { return option.present }
+func (option *%Type%Value) SetPresent(present bool) { option.present = present }
 
 func (i *%Type%Value) String() string {
     return fmt.Sprint( %type%(i.Get()) )
@@ -308,18 +322,99 @@ func Usage(program string, description string) string {
     return usage
 }
 
+"""
+
+        # add parsing functions
+        body += """
+/// Parse command line arguments, and return filled configuration
+/// Simple and straight forward, thus recommended
+///
+/// # Arguments
+///
+/// * `program` - Program name to display in help message
+/// * `description` - Description to display in help message
+///
+/// returns Result with configuration structure, or error message
+func Parse(program string, description string, allow_incomplete bool) (*Config, error) {
+    return ParseExt(program, os.Args, description, allow_incomplete)
+}
+
+/// Parse command line arguments, and return filled configuration
+///
+/// # Arguments
+///
+/// * `program` - Program name to display in help message
+/// * `args` - Command line arguments as string slice
+/// * `description` - Description to display in help message
+/// * `allow_incomplete` - Allow partial parsing ignoring missing required arguments
+/// wrong type cast will produce error anyway
+///
+/// returns Result with configuration structure, or error message
+func ParseExt(program string, args []string, description string, allow_incomplete bool) (*Config, error) {
+    flags, config := PrepareOptions(program)
+
+    usage := Usage(program, description)
+    flags.Usage = func() {
+        fmt.Printf("%s", usage)
+    }
+
+    err := flags.Parse(args[1:])
+    if err != nil {
+        return config, err
+    }
+
+"""
+
+        # register fields
+        body += self.__flagStructureFill(tokens)
+
+        body += r"""
+    return config, nil
+}
+
+
+/***************************************************************************\
+// Internal functions
+\***************************************************************************/
+
+/// Split short usage into shifted lines with specified line limit
+///
+/// # Arguments
+///
+/// * `usage` - string of any length to split
+/// * `limit` - size of line, which should not be violated
+///
+/// returns Properly formatted short usage string
 func splitShortUsage(usage string, limit uint32) string {
     rule := regexp.MustCompile(`\ `)
     tokens := rule.Split(usage, -1)
     return split(tokens, 25, limit)
 }
 
+/// Split usage into shifted lines with specified line limit
+///
+/// # Arguments
+///
+/// * `usage` - string of any length to split
+/// * `limit` - size of line, which should not be violated
+///
+/// returns Properly formatted usage string
 func splitUsage(usage string, limit uint32) string {
     rule := regexp.MustCompile(`\ `)
     tokens := rule.Split(usage, -1)
     return split(tokens, 25, limit)
 }
 
+/// Split usage into shifted lines with specified line limit
+///
+/// # Arguments
+///
+/// * `tokens` - set of tokens to which represent words, which better
+/// be moved to new line in one piece
+/// * `shift` - moved to new line string should start from this position
+/// * `limit` - size of line, which should not be violated
+///
+/// returns Properly formatted usage string
 func split(tokens []string, shift uint32, limit uint32) string {
     // calculate shift space
     space := ""
@@ -374,55 +469,6 @@ func split(tokens []string, shift uint32, limit uint32) string {
     }
     result += line
     return result
-}
-"""
-
-        # add parsing functions
-        body += """
-/// Parse command line arguments, and return filled configuration
-/// Simple and straight forward, thus recommended
-///
-/// # Arguments
-///
-/// * `program` - Program name to display in help message
-/// * `description` - Description to display in help message
-///
-/// returns Result with configuration structure, or error message
-func Parse(program string, description string, allow_incomplete bool) (*Config, error) {
-    return ParseExt(program, os.Args, description, allow_incomplete)
-}
-
-/// Parse command line arguments, and return filled configuration
-///
-/// # Arguments
-///
-/// * `program` - Program name to display in help message
-/// * `args` - Command line arguments as str slice
-/// * `description` - Description to display in help message
-/// * `allow_incomplete` - Allow partial parsing ignoring missing required arguments
-/// wrong type cast will produce error anyway
-///
-/// returns Result with configuration structure, or error message
-func ParseExt(program string, args []string, description string, allow_incomplete bool) (*Config, error) {
-    flags, config := PrepareOptions(program)
-
-    usage := Usage(program, description)
-    flags.Usage = func() {
-        fmt.Printf("%s", usage)
-    }
-
-    err := flags.Parse(args[1:])
-    if err != nil {
-        return config, err
-    }
-
-"""
-
-        # register fields
-        body += self.__flagStructureFill(tokens)
-
-        body += """
-    return config, nil
 }
 """
 
@@ -494,7 +540,7 @@ func ParseExt(program string, args []string, description string, allow_incomplet
         templateOptional = r""""""
 
 
-        templateOptionalBool = r"""    config.%NAME%.Present = isFlagPassed(flags, `%ARGUMENT%`)
+        templateOptionalBool = r"""    config.%NAME%.SetPresent( isFlagPassed(flags, `%ARGUMENT%`) )
 """
 
         templateRequired = r"""    if !allow_incomplete && !config.%NAME%.IsSet() {
@@ -537,7 +583,7 @@ func ParseExt(program string, args []string, description string, allow_incomplet
         }
     }
 """
-        code = ""
+        code = """"""
         position = 0
 
         start = False
@@ -643,9 +689,9 @@ func ParseExt(program string, args []string, description string, allow_incomplet
         templateRepeated = r"""
     flags.Var(&%VARIABLE%, `%OPTIONS%`, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}`)"""
         templateOptionalBool = r"""
-    flags.BoolVar(&%VARIABLE%.Val, `%OPTIONS%`, %DEFAULT%, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:%DEFAULT%}`)"""
+    flags.BoolVar(&%VARIABLE%.val, `%OPTIONS%`, %DEFAULT%, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:%DEFAULT%}`)"""
         templateRequiredBool = r"""
-    flags.BoolVar(&%VARIABLE%.Val, `%OPTIONS%`, %DEFAULT%, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}`)"""
+    flags.BoolVar(&%VARIABLE%.val, `%OPTIONS%`, %DEFAULT%, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}`)"""
 
         code = ""
         positional = []

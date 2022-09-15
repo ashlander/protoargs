@@ -34,8 +34,8 @@ func PrepareOptions(program string) (*flag.FlagSet, *Config) {
     config.Arghelp = BoolValue{false, false}
     config.ArgCOMMAND = StringValue{``, false}
 
-    flags.BoolVar(&config.Arghelp.Val, `h`, false, `Print help and exit {OPTIONAL,type:bool,default:false}`)
-    flags.BoolVar(&config.Arghelp.Val, `help`, false, `Print help and exit {OPTIONAL,type:bool,default:false}`)
+    flags.BoolVar(&config.Arghelp.val, `h`, false, `Print help and exit {OPTIONAL,type:bool,default:false}`)
+    flags.BoolVar(&config.Arghelp.val, `help`, false, `Print help and exit {OPTIONAL,type:bool,default:false}`)
 
     return flags, config
 }
@@ -69,18 +69,104 @@ func Usage(program string, description string) string {
     return usage
 }
 
+
+/// Parse command line arguments, and return filled configuration
+/// Simple and straight forward, thus recommended
+///
+/// # Arguments
+///
+/// * `program` - Program name to display in help message
+/// * `description` - Description to display in help message
+///
+/// returns Result with configuration structure, or error message
+func Parse(program string, description string, allow_incomplete bool) (*Config, error) {
+    return ParseExt(program, os.Args, description, allow_incomplete)
+}
+
+/// Parse command line arguments, and return filled configuration
+///
+/// # Arguments
+///
+/// * `program` - Program name to display in help message
+/// * `args` - Command line arguments as string slice
+/// * `description` - Description to display in help message
+/// * `allow_incomplete` - Allow partial parsing ignoring missing required arguments
+/// wrong type cast will produce error anyway
+///
+/// returns Result with configuration structure, or error message
+func ParseExt(program string, args []string, description string, allow_incomplete bool) (*Config, error) {
+    flags, config := PrepareOptions(program)
+
+    usage := Usage(program, description)
+    flags.Usage = func() {
+        fmt.Printf("%s", usage)
+    }
+
+    err := flags.Parse(args[1:])
+    if err != nil {
+        return config, err
+    }
+
+    config.Arghelp.SetPresent( isFlagPassed(flags, `h`) )
+    if !allow_incomplete && flags.NArg() < 1 {
+        errArgCOMMAND := errors.New(`Required positional 'COMMAND' is missing`)
+        fmt.Println(errArgCOMMAND)
+        fmt.Println(Usage(program, description))
+        return config, errArgCOMMAND
+    }
+    errArgCOMMAND := config.ArgCOMMAND.Set(flags.Arg(0))
+    if !allow_incomplete && errArgCOMMAND != nil {
+        fmt.Println(errArgCOMMAND)
+        fmt.Println(Usage(program, description))
+        return config, errArgCOMMAND
+    }
+
+    return config, nil
+}
+
+
+/***************************************************************************\
+// Internal functions
+\***************************************************************************/
+
+/// Split short usage into shifted lines with specified line limit
+///
+/// # Arguments
+///
+/// * `usage` - string of any length to split
+/// * `limit` - size of line, which should not be violated
+///
+/// returns Properly formatted short usage string
 func splitShortUsage(usage string, limit uint32) string {
     rule := regexp.MustCompile(`\ `)
     tokens := rule.Split(usage, -1)
     return split(tokens, 25, limit)
 }
 
+/// Split usage into shifted lines with specified line limit
+///
+/// # Arguments
+///
+/// * `usage` - string of any length to split
+/// * `limit` - size of line, which should not be violated
+///
+/// returns Properly formatted usage string
 func splitUsage(usage string, limit uint32) string {
     rule := regexp.MustCompile(`\ `)
     tokens := rule.Split(usage, -1)
     return split(tokens, 25, limit)
 }
 
+/// Split usage into shifted lines with specified line limit
+///
+/// # Arguments
+///
+/// * `tokens` - set of tokens to which represent words, which better
+/// be moved to new line in one piece
+/// * `shift` - moved to new line string should start from this position
+/// * `limit` - size of line, which should not be violated
+///
+/// returns Properly formatted usage string
 func split(tokens []string, shift uint32, limit uint32) string {
     // calculate shift space
     space := ""
@@ -137,60 +223,14 @@ func split(tokens []string, shift uint32, limit uint32) string {
     return result
 }
 
-/// Parse command line arguments, and return filled configuration
-/// Simple and straight forward, thus recommended
+/// If flag was found among provided arguments
 ///
 /// # Arguments
 ///
-/// * `program` - Program name to display in help message
-/// * `description` - Description to display in help message
+/// * `flags` - flag specific FlagSet, see PrepareOptions for details
+/// * `name` - name of flag to search
 ///
-/// returns Result with configuration structure, or error message
-func Parse(program string, description string, allow_incomplete bool) (*Config, error) {
-    return ParseExt(program, os.Args, description, allow_incomplete)
-}
-
-/// Parse command line arguments, and return filled configuration
-///
-/// # Arguments
-///
-/// * `program` - Program name to display in help message
-/// * `args` - Command line arguments as str slice
-/// * `description` - Description to display in help message
-/// * `allow_incomplete` - Allow partial parsing ignoring missing required arguments
-/// wrong type cast will produce error anyway
-///
-/// returns Result with configuration structure, or error message
-func ParseExt(program string, args []string, description string, allow_incomplete bool) (*Config, error) {
-    flags, config := PrepareOptions(program)
-
-    usage := Usage(program, description)
-    flags.Usage = func() {
-        fmt.Printf("%s", usage)
-    }
-
-    err := flags.Parse(args[1:])
-    if err != nil {
-        return config, err
-    }
-
-    config.Arghelp.Present = isFlagPassed(flags, `h`)
-    if !allow_incomplete && flags.NArg() < 1 {
-        errArgCOMMAND := errors.New(`Required positional 'COMMAND' is missing`)
-        fmt.Println(errArgCOMMAND)
-        fmt.Println(Usage(program, description))
-        return config, errArgCOMMAND
-    }
-    errArgCOMMAND := config.ArgCOMMAND.Set(flags.Arg(0))
-    if !allow_incomplete && errArgCOMMAND != nil {
-        fmt.Println(errArgCOMMAND)
-        fmt.Println(Usage(program, description))
-        return config, errArgCOMMAND
-    }
-
-    return config, nil
-}
-
+/// returns true if flag was present among provided arguments
 func isFlagPassed(flags *flag.FlagSet, name string) bool {
     found := false
     flags.Visit(func(f *flag.Flag) {
@@ -201,15 +241,21 @@ func isFlagPassed(flags *flag.FlagSet, name string) bool {
     return found
 }
 
+/***************************************************************************\
+// Option types
+\***************************************************************************/
+
+
 type (
     StringValue struct { // A string value for StringOption interface.
-        Val string // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val string // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option StringValue) Get() string { return option.Val }
-func (option StringValue) IsSet() bool { return option.Present }
+func (option StringValue) Get() string { return option.val }
+func (option StringValue) IsSet() bool { return option.present }
+func (option *StringValue) SetPresent(present bool) { option.present = present }
 
 func (i *StringValue) String() string {
     return fmt.Sprint( string(i.Get()) )
@@ -246,13 +292,14 @@ func (i *ArrayStringFlags) Set(value string) error {
 
 type (
     BoolValue struct { // A bool value for BoolOption interface.
-        Val bool // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val bool // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option BoolValue) Get() bool { return option.Val }
-func (option BoolValue) IsSet() bool { return option.Present }
+func (option BoolValue) Get() bool { return option.val }
+func (option BoolValue) IsSet() bool { return option.present }
+func (option *BoolValue) SetPresent(present bool) { option.present = present }
 
 func (i *BoolValue) String() string {
     return fmt.Sprint( bool(i.Get()) )
@@ -289,13 +336,14 @@ func (i *ArrayBoolFlags) Set(value string) error {
 
 type (
     Int32Value struct { // A int32 value for Int32Option interface.
-        Val int32 // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val int32 // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option Int32Value) Get() int32 { return option.Val }
-func (option Int32Value) IsSet() bool { return option.Present }
+func (option Int32Value) Get() int32 { return option.val }
+func (option Int32Value) IsSet() bool { return option.present }
+func (option *Int32Value) SetPresent(present bool) { option.present = present }
 
 func (i *Int32Value) String() string {
     return fmt.Sprint( int32(i.Get()) )
@@ -332,13 +380,14 @@ func (i *ArrayInt32Flags) Set(value string) error {
 
 type (
     Uint32Value struct { // A uint32 value for Uint32Option interface.
-        Val uint32 // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val uint32 // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option Uint32Value) Get() uint32 { return option.Val }
-func (option Uint32Value) IsSet() bool { return option.Present }
+func (option Uint32Value) Get() uint32 { return option.val }
+func (option Uint32Value) IsSet() bool { return option.present }
+func (option *Uint32Value) SetPresent(present bool) { option.present = present }
 
 func (i *Uint32Value) String() string {
     return fmt.Sprint( uint32(i.Get()) )
@@ -375,13 +424,14 @@ func (i *ArrayUint32Flags) Set(value string) error {
 
 type (
     Int64Value struct { // A int64 value for Int64Option interface.
-        Val int64 // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val int64 // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option Int64Value) Get() int64 { return option.Val }
-func (option Int64Value) IsSet() bool { return option.Present }
+func (option Int64Value) Get() int64 { return option.val }
+func (option Int64Value) IsSet() bool { return option.present }
+func (option *Int64Value) SetPresent(present bool) { option.present = present }
 
 func (i *Int64Value) String() string {
     return fmt.Sprint( int64(i.Get()) )
@@ -418,13 +468,14 @@ func (i *ArrayInt64Flags) Set(value string) error {
 
 type (
     Uint64Value struct { // A uint64 value for Uint64Option interface.
-        Val uint64 // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val uint64 // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option Uint64Value) Get() uint64 { return option.Val }
-func (option Uint64Value) IsSet() bool { return option.Present }
+func (option Uint64Value) Get() uint64 { return option.val }
+func (option Uint64Value) IsSet() bool { return option.present }
+func (option *Uint64Value) SetPresent(present bool) { option.present = present }
 
 func (i *Uint64Value) String() string {
     return fmt.Sprint( uint64(i.Get()) )
@@ -461,13 +512,14 @@ func (i *ArrayUint64Flags) Set(value string) error {
 
 type (
     Float32Value struct { // A float32 value for Float32Option interface.
-        Val float32 // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val float32 // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option Float32Value) Get() float32 { return option.Val }
-func (option Float32Value) IsSet() bool { return option.Present }
+func (option Float32Value) Get() float32 { return option.val }
+func (option Float32Value) IsSet() bool { return option.present }
+func (option *Float32Value) SetPresent(present bool) { option.present = present }
 
 func (i *Float32Value) String() string {
     return fmt.Sprint( float32(i.Get()) )
@@ -504,13 +556,14 @@ func (i *ArrayFloat32Flags) Set(value string) error {
 
 type (
     Float64Value struct { // A float64 value for Float64Option interface.
-        Val float64 // possible default value
-        Present bool // is true - flag showing argument was present in command line
+        val float64 // possible default value
+        present bool // is true - flag showing argument was present in command line
     }
 )
 
-func (option Float64Value) Get() float64 { return option.Val }
-func (option Float64Value) IsSet() bool { return option.Present }
+func (option Float64Value) Get() float64 { return option.val }
+func (option Float64Value) IsSet() bool { return option.present }
+func (option *Float64Value) SetPresent(present bool) { option.present = present }
 
 func (i *Float64Value) String() string {
     return fmt.Sprint( float64(i.Get()) )
