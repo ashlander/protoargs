@@ -178,9 +178,46 @@ func ParseExt(program string, args []string, description string, allow_incomplet
 ///
 /// returns Properly formatted short usage string
 func splitShortUsage(usage string, limit uint32) string {
-    rule := regexp.MustCompile(`\ `)
+    var restokens []string
+
+    rule := regexp.MustCompile(`\ \[`) // trying to preserve [.*] options on the same line
+    subrule := regexp.MustCompile(`\]\ `) // split on last ]
+    spacerule := regexp.MustCompile(`\ `) // split with space for the rest
+
     tokens := rule.Split(usage, -1)
-    return split(tokens, 25, limit)
+    for index, token := range tokens {
+        if index > 0 {
+            token = `[` + token
+        }
+        subtokens := subrule.Split(token, -1)
+        if len(subtokens) > 1 {
+            for subindex, subtoken := range subtokens {
+                if subindex != (len(subtokens)-1) {
+                    subtoken += `]`
+                }
+                subsubtokens := spacerule.Split(subtoken, -1)
+                if len(subsubtokens) > 1 {
+                    for _, subsubtoken := range subsubtokens {
+                        restokens = append(restokens, subsubtoken)
+                    }
+                } else {
+                    restokens = append(restokens, subtoken)
+                }
+            }
+        } else if token[0] != '[' {
+            subtokens := spacerule.Split(token, -1)
+            if len(subtokens) > 1 {
+                for _, subtoken := range subtokens {
+                    restokens = append(restokens, subtoken)
+                }
+            } else {
+                restokens = append(restokens, token)
+            }
+        } else {
+            restokens = append(restokens, token)
+        }
+    }
+    return split(restokens, 25, limit)
 }
 
 /// Split usage into shifted lines with specified line limit
@@ -253,7 +290,7 @@ func split(tokens []string, shift uint32, limit uint32) string {
                 length++
             }
             if strings.TrimRight(line[start:], " ") != "" {
-                line = space + line[start:] + "\n "
+                line = "\n" + space + line[start:]
             } else {
                 line = " "
             }

@@ -112,10 +112,11 @@ Your application usage output will be generated for you
 .. code:: plain
 
     usage: program -e paramE [-a|--a-long-param paramA] [--b-long-param paramB]
-                             [-c|--c-long-param paramC] [--d-long-param paramD] [-f
-                             paramF [-f paramF ...]] [-i] [--j-long] [-h|--help]
-                             [-k paramFloat] [-l paramDouble] PARAMG P_A_R_A_M_G_2
-                             PARAM_FLOAT PARAM_DOUBLE PARAMH [PARAMH ...]
+                             [-c|--c-long-param paramC] [--d-long-param paramD]
+                             [-f paramF [-f paramF ...]] [-i] [--j-long]
+                             [-h|--help] [-k paramFloat] [-l paramDouble] PARAMG
+                             P_A_R_A_M_G_2 PARAM_FLOAT PARAM_DOUBLE PARAMH
+                             [PARAMH ...]
 
     Desription
 
