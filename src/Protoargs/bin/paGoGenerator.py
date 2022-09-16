@@ -303,7 +303,7 @@ func PrepareOptions(program string) (*flag.FlagSet, *Config) {
 
 
         # add usage function binding
-        body += """
+        body += r"""
 /// Get usage string
 ///
 /// # Arguments
@@ -313,6 +313,20 @@ func PrepareOptions(program string) (*flag.FlagSet, *Config) {
 ///
 /// returns String with usage information
 func Usage(program string, description string) string {
+    return UsageExt(program, description, 80)
+}
+
+/// Get usage string
+///
+/// # Arguments
+///
+/// * `program` - Program name to display in help message
+/// * `description` - Description to display in help message
+/// * `limit` - size of line, which should not be violated
+///
+/// returns String with usage information
+func UsageExt(program string, description string, limit uint32) string {
+
 """
         # register usage arguments
         body += self.__flagProgramUsage(tokens)
@@ -1015,9 +1029,7 @@ func split(tokens []string, shift uint32, limit uint32) string {
                     logging.warn("unknown token inside protoargs structure: " + str(token))
 
         # generate final usage code
-        code = r"""
-    var limit uint32 = 80
-    block := "\n" + `usage: ` + program + `"""
+        code = r"""    block := "\n" + `usage: ` + program + `"""
         if len(shortRequired):
             code += " " + shortRequired
         if len(shortOptional):

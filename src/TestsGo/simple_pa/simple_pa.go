@@ -79,8 +79,20 @@ func PrepareOptions(program string) (*flag.FlagSet, *Config) {
 ///
 /// returns String with usage information
 func Usage(program string, description string) string {
+    return UsageExt(program, description, 80)
+}
 
-    var limit uint32 = 80
+/// Get usage string
+///
+/// # Arguments
+///
+/// * `program` - Program name to display in help message
+/// * `description` - Description to display in help message
+/// * `limit` - size of line, which should not be violated
+///
+/// returns String with usage information
+func UsageExt(program string, description string, limit uint32) string {
+
     block := "\n" + `usage: ` + program + ` --count value --r-underscore value [--configuration value] [--flags [--flags ...]] [--version] [--help] [-c value] [--o-underscore value] [--a-underscore value [--a-underscore value ...]] [--s-quote-in-descr value]`
     usage := splitShortUsage(block, limit)
 
