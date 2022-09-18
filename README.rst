@@ -17,14 +17,15 @@ Description
 
 **Protoargs** is python proto file transpiler, which generates arguments parser and configuration ready in-code structures using protobuf_ configuration.
 
-The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python** and **rust** are supported.
+The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python**, **rust** and **go** are supported.
 
-First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
+First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godoc_ for the in-code usage.
 
 .. _protobuf: https://github.com/protocolbuffers/protobuf
 .. _cppdoc: doc/cpp/
 .. _pythondoc: doc/python/
 .. _rustdoc: doc/rust/
+.. _godoc: doc/go/
 
 Configuration File Rules
 ========================
@@ -233,9 +234,11 @@ So here is usage you will get with *-h/--help*.
 
 .. code:: bash
 
-    usage: protoargs [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py] [--rust]
+    usage: protoargs [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py]
+                     [--rust] [--go]
     
-    Protoargs program generates command line arguments parsers, using proto file as configuration.
+    Protoargs program generates command line arguments parsers, using proto file
+    as configuration.
     
     optional arguments:
       -h, --help           show this help message and exit
@@ -245,15 +248,22 @@ So here is usage you will get with *-h/--help*.
                            {REQUIRED,type:string,default:""}
       --loglevel loglevel  Log level, possible values [ERROR|WARNING|INFO|DEBUG]
                            {OPTIONAL,type:string,default:"INFO"}
-      --cpp                Generate c++11 arguments parser (Note: you need generate files with protoc
-                           compiler additionally, so that parser will work). Parser will have name of
-                           proto file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
+      --cpp                Generate c++11 arguments parser (Note: you need
+                           generate files with protoc compiler additionally, so
+                           that parser will work). Parser will have name of proto
+                           file name, e.g. [protoargs.proto]->[protoargs.pa.cc]
                            {OPTIONAL,type:bool,default:"false"}
-      --py                 Generate python arguments parser. Parser will have name of proto file name,
-                           e.g. [protoargs.proto]->[protoargs_pa.py]
+      --py                 Generate python arguments parser. Parser will have name
+                           of proto file name, e.g.
+                           [protoargs.proto]->[protoargs_pa.py]
                            {OPTIONAL,type:bool,default:"false"}
-      --rust               Generate rust arguments parser. Parser will have name of proto file name,
-                           e.g. [protoargs.proto]->[protoargs_pa.rs]
+      --rust               Generate rust arguments parser. Parser will have name
+                           of proto file name, e.g.
+                           [protoargs.proto]->[protoargs_pa.rs]
+                           {OPTIONAL,type:bool,default:"false"}
+      --go                 Generate go arguments parser. Parser will have name of
+                           proto file name, e.g.
+                           [protoargs.proto]->[protoargs_pa.go]
                            {OPTIONAL,type:bool,default:"false"}
 
 ..
@@ -267,7 +277,7 @@ And you should get *protoargs_pa.py* file inside */tmp* directory.
 
 ..
 
-Now go directly to specific manuals by clicking cppdoc_ or pythondoc_ or rustdoc_ for the in-code usage.
+Now go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godoc_ for the in-code usage.
 
 License
 =======
