@@ -3,7 +3,7 @@ import os
 
 class ProtoconfConan(ConanFile):
     name = "protoargs"
-    version = "0.1.0"
+    version = "0.4.0"
     license = "BSD 2-Clause License"
     author = "Andrii Zhuk <andrewzhuk@gmail.com>"
     url = "https://github.com/ashlander/protoargs.git"
