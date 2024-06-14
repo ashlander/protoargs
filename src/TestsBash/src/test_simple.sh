@@ -63,6 +63,74 @@ fi
 
 echo "##########################################"
 NOK=false
+TEST_NAME="TestCheckAllPositiveSpaces"
+echo "${TEST_NAME}"
+echo "##########################################"
+
+simple_parse "${program}" "${description}" false \
+        --count 2 \
+        --configuration "/tmp/conf" \
+        --flags=true \
+        --flags=false \
+        -c "flags should be true and false" \
+        --o-underscore "no underscore" \
+        --r-underscore "no underscore" \
+        --a-underscore "no underscore0" \
+        --a-underscore "no underscore1"
+
+if [ "$?" -eq 0 ]; then
+    if [ "$simple_count_PRESENT" != true ] || [ "$simple_count" != 2 ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_configuration_PRESENT" != true ] || [ "$simple_configuration" != "/tmp/conf" ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_flags_PRESENT" != true ] || [ "$simple_flags_COUNT" != 2 ]; then
+        fail_line $LINENO
+    fi
+    if [ "${simple_flags[0]}" != true ]; then
+        fail_line $LINENO
+    fi
+    if [ "${simple_flags[1]}" != false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_version_PRESENT" != false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_help_PRESENT" != false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_c_PRESENT" != true ] || [ "$simple_c" != "flags should be true and false" ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_o_underscore_PRESENT" != true ] || [ "$simple_o_underscore" != "no underscore" ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_r_underscore_PRESENT" != true ] || [ "$simple_r_underscore" != "no underscore" ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_a_underscore_PRESENT" != true ] || [ "$simple_a_underscore_COUNT" != 2 ]; then
+        fail_line $LINENO
+    fi
+    if [ "${simple_a_underscore[0]}" != "no underscore0" ]; then
+        fail_line $LINENO
+    fi
+    if [ "${simple_a_underscore[1]}" != "no underscore1" ]; then
+        fail_line $LINENO
+    fi
+    if [ "$simple_s_quote_in_descr_PRESENT" != false ]; then
+        fail_line $LINENO
+    fi
+else
+    NOK=true
+fi
+if [ "$NOK" == true ]; then
+    fail
+fi
+
+
+echo "##########################################"
+NOK=false
 TEST_NAME="TestCheckAllPositiveEquals"
 echo "${TEST_NAME}"
 echo "##########################################"
@@ -72,7 +140,7 @@ simple_parse "${program}" "${description}" false \
         --configuration="/tmp/conf" \
         --flags=true \
         --flags=false \
-        -c "flags should be true and false" \
+        -c="flags should be true and false" \
         --o-underscore="no underscore" \
         --r-underscore="no underscore" \
         --a-underscore="no underscore0" \
