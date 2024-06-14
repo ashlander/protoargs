@@ -12,6 +12,7 @@ def prepareOptions(program, description):
     parser.add_argument(r"""--py""", help=r"""Generate python arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.py] {OPTIONAL,type:bool,default:"false"}""", metavar=r"""py""", dest=r"""py"""   , action="store_const"  , const=(not False))
     parser.add_argument(r"""--rust""", help=r"""Generate rust arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.rs] {OPTIONAL,type:bool,default:"false"}""", metavar=r"""rust""", dest=r"""rust"""   , action="store_const"  , const=(not False))
     parser.add_argument(r"""--go""", help=r"""Generate go arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.go] {OPTIONAL,type:bool,default:"false"}""", metavar=r"""go""", dest=r"""go"""   , action="store_const"  , const=(not False))
+    parser.add_argument(r"""--bash""", help=r"""Generate bash arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.sh] {OPTIONAL,type:bool,default:"false"}""", metavar=r"""bash""", dest=r"""bash"""   , action="store_const"  , const=(not False))
 
 
     return parser

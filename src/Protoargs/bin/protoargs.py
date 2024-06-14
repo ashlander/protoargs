@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/env python
 
 import os
 import sys
@@ -11,6 +11,7 @@ import paCppGenerator
 import paPyGenerator
 import paRustGenerator
 import paGoGenerator
+import paBashGenerator
 
 class ArgsParser:
 
@@ -36,7 +37,8 @@ if __name__ == "__main__":
     if parser.config.cpp \
             or parser.config.py \
             or parser.config.go \
-            or parser.config.rust:
+            or parser.config.rust \
+            or parser.config.bash:
         path = parser.config.src
         dst = parser.config.dst
 
@@ -58,6 +60,11 @@ if __name__ == "__main__":
         if parser.config.go:
             logging.info("Generate go parser from proto file '" + path + "'")
             generator = paGoGenerator.Generator(path, dst)
+            generator.generate()
+
+        if parser.config.bash:
+            logging.info("Generate bash parser from proto file '" + path + "'")
+            generator = paBashGenerator.Generator(path, dst)
             generator.generate()
 
     else:
