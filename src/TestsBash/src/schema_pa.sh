@@ -4,7 +4,7 @@
 function schema_prepareOptions()
 {
     # Common Variables
-    PROTOARGS_USAGE=""
+    schema_PROTOARG_USAGE=""
 
     # String param option with default value. Note: this comment will be taken as description
     schema_paramA="// tricky default value"
@@ -162,6 +162,7 @@ function schema_parse() #(program, description, allow_incomplete, args)
     local allow_incomplete=$3
 
     schema_prepareOptions
+    schema_usage "${program}" "${description}"
 
 
     shift
@@ -187,40 +188,94 @@ function schema_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             --b-long-param)
-                schema_paramB=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramB' of type uint32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramB=$2
+                fi
                 schema_paramB_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             --b-long-param=*)
-                schema_paramB="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramB' of type uint32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramB="${1#*=}"
+                fi
                 schema_paramB_PRESENT=true
                 shift # past argument=value
                 ;;
 
             -c|--c-long-param)
-                schema_paramC=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramC' of type int32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramC=$2
+                fi
                 schema_paramC_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             -c=*|--c-long-param=*)
-                schema_paramC="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramC' of type int32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramC="${1#*=}"
+                fi
                 schema_paramC_PRESENT=true
                 shift # past argument=value
                 ;;
 
             --d-long-param)
-                schema_paramD=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramD' of type float32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramD=$2
+                fi
                 schema_paramD_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             --d-long-param=*)
-                schema_paramD="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramD' of type float32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramD="${1#*=}"
+                fi
                 schema_paramD_PRESENT=true
                 shift # past argument=value
                 ;;
@@ -239,14 +294,32 @@ function schema_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             -f)
-                schema_paramF=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramF' of type int32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramF=$2
+                fi
                 schema_paramF_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             -f=*)
-                schema_paramF="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramF' of type int32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramF="${1#*=}"
+                fi
                 schema_paramF_PRESENT=true
                 shift # past argument=value
                 ;;
@@ -270,66 +343,138 @@ function schema_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             -k)
-                schema_paramFloat=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramFloat' of type float32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramFloat=$2
+                fi
                 schema_paramFloat_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             -k=*)
-                schema_paramFloat="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramFloat' of type float32 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramFloat="${1#*=}"
+                fi
                 schema_paramFloat_PRESENT=true
                 shift # past argument=value
                 ;;
 
             -l)
-                schema_paramDouble=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramDouble' of type float64 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramDouble=$2
+                fi
                 schema_paramDouble_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             -l=*)
-                schema_paramDouble="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'paramDouble' of type float64 but the value is '${value}'"
+                        echo "${schema_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    schema_paramDouble="${1#*=}"
+                fi
                 schema_paramDouble_PRESENT=true
                 shift # past argument=value
                 ;;
 
             -*|--*)
-                echo "Unknown option '$1'"
-                schema_usage
-                echo "${PROTOARGS_USAGE}"
+                echo "[ERR] Unknown option '$1'"
+                echo "${schema_PROTOARG_USAGE}"
                 return 1
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
                 shift # past argument
                 ;;
-            esac
-        done
+        esac
+    done
 
-        set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
-
-
-        schema_PARAMG="${POSITIONAL_ARGS[0]}"
-        if [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
-            echo "Positional 'PARAMG' parameter is not set"
-            exit 1
-        fi
+    set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 
-        schema_PARAM_FLOAT="${POSITIONAL_ARGS[2]}"
-        if [ 2 -ge ${#POSITIONAL_ARGS[@]} ]; then
-            echo "Positional 'PARAM_FLOAT' parameter is not set"
-            exit 1
-        fi
+    if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'PARAMG' parameter is not set"
+        return 1
+    fi
+    schema_PARAMG="${POSITIONAL_ARGS[0]}"
+    schema_PARAMG_PRESENT=true
 
-        schema_PARAM_DOUBLE="${POSITIONAL_ARGS[3]}"
-        if [ 3 -ge ${#POSITIONAL_ARGS[@]} ]; then
-            echo "Positional 'PARAM_DOUBLE' parameter is not set"
-            exit 1
-        fi
+    if [ "$allow_incomplete" == false ] && [ 1 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'P_A_R_A_M_G_2' parameter is not set"
+        return 1
+    fi
+    schema_P_A_R_A_M_G_2="${POSITIONAL_ARGS[1]}"
+    schema_P_A_R_A_M_G_2_PRESENT=true
 
+    if [ "$allow_incomplete" == false ] && [ 2 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'PARAM_FLOAT' parameter is not set"
+        return 1
+    fi
+    schema_PARAM_FLOAT="${POSITIONAL_ARGS[2]}"
+    schema_PARAM_FLOAT_PRESENT=true
+
+    if [ "$allow_incomplete" == false ] && [ 3 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'PARAM_DOUBLE' parameter is not set"
+        return 1
+    fi
+    schema_PARAM_DOUBLE="${POSITIONAL_ARGS[3]}"
+    schema_PARAM_DOUBLE_PRESENT=true
+
+    if [ "$allow_incomplete" == false ] && [ 4 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'PARAMH' parameter is not set"
+        return 1
+    fi
+    schema_PARAMH="${POSITIONAL_ARGS[4]}"
+    schema_PARAMH_PRESENT=true
+
+    if [ "$allow_incomplete" == false ] && [ $schema_paramE_PRESENT == false ]; then
+        echo "[ERR] Required 'paramE' is missing"
+        echo "${schema_PROTOARG_USAGE}"
+        return 1
+    fi
+
+        # repeated positional
+        if !allow_incomplete && flags.NArg() < 5 {
+        errschema_PARAMH := errors.New(`Required at least one positional 'PARAMH'`)
+        fmt.Println(errschema_PARAMH)
+        fmt.Println(Usage(program, description))
+        return config, errschema_PARAMH
+    }
+    for i := 4; i < flags.NArg(); i++ {
+        errschema_PARAMH := config.schema_PARAMH.Set(flags.Arg(i))
+        if !allow_incomplete && errschema_PARAMH != nil {
+            fmt.Println(errschema_PARAMH)
+            fmt.Println(Usage(program, description))
+            return config, errschema_PARAMH
+        }
+    }
 
     return 0
 }

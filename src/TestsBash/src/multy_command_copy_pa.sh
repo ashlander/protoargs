@@ -4,7 +4,7 @@
 function multy_command_copy_prepareOptions()
 {
     # Common Variables
-    PROTOARGS_USAGE=""
+    multy_command_copy_PROTOARG_USAGE=""
 
     # Print help and exit
     multy_command_copy_help=false
@@ -74,6 +74,7 @@ function multy_command_copy_parse() #(program, description, allow_incomplete, ar
     local allow_incomplete=$3
 
     multy_command_copy_prepareOptions
+    multy_command_copy_usage "${program}" "${description}"
 
 
     shift
@@ -98,22 +99,33 @@ function multy_command_copy_parse() #(program, description, allow_incomplete, ar
                 ;;
 
             -*|--*)
-                echo "Unknown option '$1'"
-                multy_command_copy_usage
-                echo "${PROTOARGS_USAGE}"
+                echo "[ERR] Unknown option '$1'"
+                echo "${multy_command_copy_PROTOARG_USAGE}"
                 return 1
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
                 shift # past argument
                 ;;
-            esac
-        done
+        esac
+    done
 
-        set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+    set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 
+    if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'SRC' parameter is not set"
+        return 1
+    fi
+    multy_command_copy_SRC="${POSITIONAL_ARGS[0]}"
+    multy_command_copy_SRC_PRESENT=true
 
+    if [ "$allow_incomplete" == false ] && [ 1 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'DST' parameter is not set"
+        return 1
+    fi
+    multy_command_copy_DST="${POSITIONAL_ARGS[1]}"
+    multy_command_copy_DST_PRESENT=true
 
     return 0
 }

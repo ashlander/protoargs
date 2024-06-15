@@ -4,7 +4,7 @@
 function multy_command_create_prepareOptions()
 {
     # Common Variables
-    PROTOARGS_USAGE=""
+    multy_command_create_PROTOARG_USAGE=""
 
     # Print help and exit
     multy_command_create_help=false
@@ -69,6 +69,7 @@ function multy_command_create_parse() #(program, description, allow_incomplete, 
     local allow_incomplete=$3
 
     multy_command_create_prepareOptions
+    multy_command_create_usage "${program}" "${description}"
 
 
     shift
@@ -87,34 +88,57 @@ function multy_command_create_parse() #(program, description, allow_incomplete, 
                 ;;
 
             -s|--size)
-                multy_command_create_size=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'size' of type uint64 but the value is '${value}'"
+                        echo "${multy_command_create_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    multy_command_create_size=$2
+                fi
                 multy_command_create_size_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             -s=*|--size=*)
-                multy_command_create_size="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'size' of type uint64 but the value is '${value}'"
+                        echo "${multy_command_create_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    multy_command_create_size="${1#*=}"
+                fi
                 multy_command_create_size_PRESENT=true
                 shift # past argument=value
                 ;;
 
             -*|--*)
-                echo "Unknown option '$1'"
-                multy_command_create_usage
-                echo "${PROTOARGS_USAGE}"
+                echo "[ERR] Unknown option '$1'"
+                echo "${multy_command_create_PROTOARG_USAGE}"
                 return 1
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
                 shift # past argument
                 ;;
-            esac
-        done
+        esac
+    done
 
-        set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+    set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 
+    if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'PATH' parameter is not set"
+        return 1
+    fi
+    multy_command_create_PATH="${POSITIONAL_ARGS[0]}"
+    multy_command_create_PATH_PRESENT=true
 
     return 0
 }

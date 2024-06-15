@@ -4,7 +4,7 @@
 function simple_prepareOptions()
 {
     # Common Variables
-    PROTOARGS_USAGE=""
+    simple_PROTOARG_USAGE=""
 
     # Converted to --count
     simple_count=1
@@ -122,6 +122,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
     local allow_incomplete=$3
 
     simple_prepareOptions
+    simple_usage "${program}" "${description}"
 
 
     shift
@@ -134,14 +135,32 @@ function simple_parse() #(program, description, allow_incomplete, args)
         case $1 in
 
             --count)
-                simple_count=$2
+                local value=$2
+                if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'count' of type uint64 but the value is '${value}'"
+                        echo "${simple_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    simple_count=$2
+                fi
                 simple_count_PRESENT=true
                 shift # past argument
                 shift # past value
                 ;;
 
             --count=*)
-                simple_count="${1#*=}"
+                local value="${1#*=}"
+                if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'count' of type uint64 but the value is '${value}'"
+                        echo "${simple_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    simple_count="${1#*=}"
+                fi
                 simple_count_PRESENT=true
                 shift # past argument=value
                 ;;
@@ -160,7 +179,16 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             --flags=*)
-                simple_flags+=("${1#*=}")
+                local value="${1#*=}"
+                if [ "${value}" != true ] && [ "${value}" != false ]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'flags' of type bool but the value is '${value}'"
+                        echo "${simple_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    simple_flags+=("${1#*=}")
+                fi
                 simple_flags_PRESENT=true
                 simple_flags_COUNT=$((simple_flags_COUNT + 1))
                 shift # past argument=value
@@ -218,7 +246,16 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             --a-underscore)
-                simple_a_underscore+=("$2")
+                local value=$2
+                if [ "0" -ne "0" ]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'a-underscore' of type string but the value is '${value}'"
+                        echo "${simple_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    simple_a_underscore+=("$2")
+                fi
                 simple_a_underscore_PRESENT=true
                 simple_a_underscore_COUNT=$((simple_a_underscore_COUNT + 1))
                 shift # past argument
@@ -226,7 +263,16 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             --a-underscore=*)
-                simple_a_underscore+=("${1#*=}")
+                local value="${1#*=}"
+                if [ "0" -ne "0" ]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'a-underscore' of type string but the value is '${value}'"
+                        echo "${simple_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    simple_a_underscore+=("${1#*=}")
+                fi
                 simple_a_underscore_PRESENT=true
                 simple_a_underscore_COUNT=$((simple_a_underscore_COUNT + 1))
                 shift # past argument=value
@@ -246,20 +292,31 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             -*|--*)
-                echo "Unknown option '$1'"
-                simple_usage
-                echo "${PROTOARGS_USAGE}"
+                echo "[ERR] Unknown option '$1'"
+                echo "${simple_PROTOARG_USAGE}"
                 return 1
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
                 shift # past argument
                 ;;
-            esac
-        done
+        esac
+    done
 
-        set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+    set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
+
+    if [ "$allow_incomplete" == false ] && [ $simple_count_PRESENT == false ]; then
+        echo "[ERR] Required 'count' is missing"
+        echo "${simple_PROTOARG_USAGE}"
+        return 1
+    fi
+
+    if [ "$allow_incomplete" == false ] && [ $simple_r_underscore_PRESENT == false ]; then
+        echo "[ERR] Required 'r-underscore' is missing"
+        echo "${simple_PROTOARG_USAGE}"
+        return 1
+    fi
 
     return 0
 }

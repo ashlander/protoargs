@@ -4,7 +4,7 @@
 function multy_command_prepareOptions()
 {
     # Common Variables
-    PROTOARGS_USAGE=""
+    multy_command_PROTOARG_USAGE=""
 
     # Print help and exit
     multy_command_help=false
@@ -64,6 +64,7 @@ function multy_command_parse() #(program, description, allow_incomplete, args)
     local allow_incomplete=$3
 
     multy_command_prepareOptions
+    multy_command_usage "${program}" "${description}"
 
 
     shift
@@ -82,21 +83,26 @@ function multy_command_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             -*|--*)
-                echo "Unknown option '$1'"
-                multy_command_usage
-                echo "${PROTOARGS_USAGE}"
+                echo "[ERR] Unknown option '$1'"
+                echo "${multy_command_PROTOARG_USAGE}"
                 return 1
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
                 shift # past argument
                 ;;
-            esac
-        done
+        esac
+    done
 
-        set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+    set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 
+    if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional 'COMMAND' parameter is not set"
+        return 1
+    fi
+    multy_command_COMMAND="${POSITIONAL_ARGS[0]}"
+    multy_command_COMMAND_PRESENT=true
 
     return 0
 }

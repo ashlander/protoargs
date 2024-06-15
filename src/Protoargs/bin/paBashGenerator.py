@@ -189,7 +189,7 @@ class Generator:
 function %PACKAGE%_prepareOptions()
 {
     # Common Variables
-    PROTOARGS_USAGE=""
+    %PACKAGE%_PROTOARG_USAGE=""
 """
         # init variables
         body += self.__flagStructureFields(tokens)
@@ -229,8 +229,6 @@ PROTOARGS_EOM
 
 """
 
-        # TODO function name should have prefix "filename" to avoid collisions
-        # add parsing functions
         body += """
 # Parse command line arguments, and return filled configuration
 #
@@ -250,14 +248,15 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
     local allow_incomplete=$3
 
     %PACKAGE%_prepareOptions
+    %PACKAGE%_usage "${program}" "${description}"
 
 """
 
         # register fields
         body += self.__addParsing(tokens)
 
-        # TODO verify fields
-        #body += self.__flagStructureFill(tokens)
+        # verify fields
+        body += self.__flagStructureFill(tokens)
 
         body += r"""
     return 0
@@ -270,7 +269,16 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
     def __addParsing(self, tokens):
         templateDefault = r"""
             %ARGUMENT%)
-                %NAME%=$2
+                local value=$2
+                if %CHECKER%; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    %NAME%=$2
+                fi
                 %NAME_PRESENT%=true
                 shift # past argument
                 shift # past value
@@ -279,7 +287,16 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
 
         templateDefaultRepeated = r"""
             %ARGUMENT%)
-                %NAME%+=("$2")
+                local value=$2
+                if %CHECKER%; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    %NAME%+=("$2")
+                fi
                 %NAME_PRESENT%=true
                 %NAME%_COUNT=$((%NAME%_COUNT + 1))
                 shift # past argument
@@ -307,15 +324,42 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
 
         templateDefaultEquals = r"""
             %ARGUMENT%)
+                local value="${1#*=}"
+                if %CHECKER%; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    %NAME%="${1#*=}"
+                fi
+                %NAME_PRESENT%=true
+                shift # past argument=value
+                ;;
+"""
+
+        templateStringEquals = r"""
+            %ARGUMENT%)
                 %NAME%="${1#*=}"
                 %NAME_PRESENT%=true
                 shift # past argument=value
                 ;;
 """
 
+
         templateDefaultRepeatedEquals = r"""
             %ARGUMENT%)
-                %NAME%+=("${1#*=}")
+                local value="${1#*=}"
+                if %CHECKER%; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    %NAME%+=("${1#*=}")
+                fi
                 %NAME_PRESENT%=true
                 %NAME%_COUNT=$((%NAME%_COUNT + 1))
                 shift # past argument=value
@@ -388,6 +432,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                                     template_eq = templateDefaultRepeatedEquals
                             elif token.type == pt_string:
                                 template = templateString
+                                template_eq = templateStringEquals
                                 if token.field == paTokenizer.pf_repeated:
                                     template = templateDefaultRepeated
                                     template_eq = templateDefaultRepeatedEquals
@@ -396,44 +441,51 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                             code += template \
                                     .replace("%NAME%", self.__convertToBashName(token.name)) \
                                     .replace("%NAME_PRESENT%", self.__convertToBashName(token.name) + "_PRESENT") \
+                                    .replace("%TYPE%", bashType) \
                                     .replace("%ARGUMENT%", argument) \
+                                    .replace("%OPTION%", self.__convertToArgName(token.name)) \
 
                             # argument with '='
                             code += template_eq \
                                     .replace("%NAME%", self.__convertToBashName(token.name)) \
                                     .replace("%NAME_PRESENT%", self.__convertToBashName(token.name) + "_PRESENT") \
+                                    .replace("%TYPE%", bashType) \
                                     .replace("%ARGUMENT%", argument_eq) \
+                                    .replace("%OPTION%", self.__convertToArgName(token.name)) \
+
+                            # checker
+                            code = code.replace("%CHECKER%", ( \
+                                    r"""[ "${value}" != true ] && [ "${value}" != false ]""" if token.type == pt_bool \
+                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]"""  if token.type == pt_double or token.type == pt_float \
+                                    else r"""! [[ "${value}" =~ ^[+-][0-9]+$ ]]"""  if token.type == pt_int32 or token.type == pt_int64 \
+                                    else r"""! [[ "${value}" =~ ^[0-9]+$ ]]"""  if token.type == pt_uint32 or token.type == pt_uint64 \
+                                    else r"""[ "0" -ne "0" ]""" \
+                                    )) \
 
         code += """
             -*|--*)
-                echo "Unknown option '$1'"
-                %PACKAGE%_usage
-                echo "${PROTOARGS_USAGE}"
+                echo "[ERR] Unknown option '$1'"
+                echo "${%PACKAGE%_PROTOARG_USAGE}"
                 return 1
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
                 shift # past argument
                 ;;
-            esac
-        done
+        esac
+    done
 
-        set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+    set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 """
 
         templatePositionalDefault = r"""
-        %NAME%="${POSITIONAL_ARGS[%POSITION%]}"
-        if [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
-            echo "Positional '%TRUENAME%' parameter is not set"
-            exit 1
-        fi
-"""
-
-        templatePositionalString = r"""
-"""
-
-        templatePositionalBool = r"""
+    if [ "$allow_incomplete" == false ] && [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "Positional '%TRUENAME%' parameter is not set"
+        return 1
+    fi
+    %NAME%="${POSITIONAL_ARGS[%POSITION%]}"
+    %NAME%_PRESENT=true
 """
 
         position = 0
@@ -461,11 +513,6 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                         if positional:
                             logging.debug("Fill positional name: " + str(token))
                             template = templatePositionalDefault
-                            if token.type == pt_bool:
-                                template = templatePositionalBool
-                            elif token.type == pt_string:
-                                template = templatePositionalString
-
                             code += template \
                                     .replace("%NAME%", self.__convertToBashName(token.name)) \
                                     .replace("%TRUENAME%", token.name) \
@@ -538,34 +585,23 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
         templateOptional = r""""""
 
 
-        templateOptionalBool = r"""    config.%NAME%.SetPresent( isFlagPassed(flags, `%ARGUMENT%`) )
-"""
+        templateOptionalBool = r""""""
 
-        templateRequired = r"""    if !allow_incomplete && !config.%NAME%.IsSet() {
-        err%NAME% := errors.New(`Required '%OPTION%' is missing`)
-        fmt.Println(err%NAME%)
-        fmt.Println(Usage(program, description))
-        return config, err%NAME%
-    }
+        templateRequired = r"""
+    if [ "$allow_incomplete" == false ] && [ $%NAME%_PRESENT == false ]; then
+        echo "[ERR] Required '%OPTION%' is missing"
+        echo "${%PACKAGE%_PROTOARG_USAGE}"
+        return 1
+    fi
 """
 
         templateRepeated = r""""""
 
-        templatePositional = r"""    if !allow_incomplete && flags.NArg() < %POSITION% {
-        err%NAME% := errors.New(`Required positional '%OPTION%' is missing`)
-        fmt.Println(err%NAME%)
-        fmt.Println(Usage(program, description))
-        return config, err%NAME%
-    }
-    err%NAME% := %VARIABLE%.Set(flags.Arg(%INDEX%))
-    if !allow_incomplete && err%NAME% != nil {
-        fmt.Println(err%NAME%)
-        fmt.Println(Usage(program, description))
-        return config, err%NAME%
-    }
-"""
+        templatePositional = r""""""
 
-        templateRepeatedPositional = r"""    if !allow_incomplete && flags.NArg() < %POSITION% {
+        templateRepeatedPositional = r"""
+        # repeated positional
+        if !allow_incomplete && flags.NArg() < %POSITION% {
         err%NAME% := errors.New(`Required at least one positional '%OPTION%'`)
         fmt.Println(err%NAME%)
         fmt.Println(Usage(program, description))
@@ -580,7 +616,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
         }
     }
 """
-        code = """"""
+        code = ""
         position = 0
 
         start = False
