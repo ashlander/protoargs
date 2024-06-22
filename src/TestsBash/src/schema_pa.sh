@@ -220,7 +220,7 @@ function schema_parse() #(program, description, allow_incomplete, args)
 
             -c|--c-long-param)
                 local value=$2
-                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'paramC' of type int32 but the value is '${value}'"
                         echo "${schema_PROTOARG_USAGE}"
@@ -236,7 +236,7 @@ function schema_parse() #(program, description, allow_incomplete, args)
 
             -c=*|--c-long-param=*)
                 local value="${1#*=}"
-                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'paramC' of type int32 but the value is '${value}'"
                         echo "${schema_PROTOARG_USAGE}"
@@ -295,32 +295,34 @@ function schema_parse() #(program, description, allow_incomplete, args)
 
             -f)
                 local value=$2
-                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'paramF' of type int32 but the value is '${value}'"
                         echo "${schema_PROTOARG_USAGE}"
                         return 1
                     fi
                 else
-                    schema_paramF=$2
+                    schema_paramF+=("$2")
                 fi
                 schema_paramF_PRESENT=true
+                schema_paramF_COUNT=$((schema_paramF_COUNT + 1))
                 shift # past argument
                 shift # past value
                 ;;
 
             -f=*)
                 local value="${1#*=}"
-                if ! [[ "${value}" =~ ^[+-][0-9]+$ ]]; then
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'paramF' of type int32 but the value is '${value}'"
                         echo "${schema_PROTOARG_USAGE}"
                         return 1
                     fi
                 else
-                    schema_paramF="${1#*=}"
+                    schema_paramF+=("${1#*=}")
                 fi
                 schema_paramF_PRESENT=true
+                schema_paramF_COUNT=$((schema_paramF_COUNT + 1))
                 shift # past argument=value
                 ;;
 
@@ -405,9 +407,13 @@ function schema_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             -*|--*)
-                echo "[ERR] Unknown option '$1'"
-                echo "${schema_PROTOARG_USAGE}"
-                return 1
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
+                    echo "[ERR] Unknown option '$1'"
+                    echo "${schema_PROTOARG_USAGE}"
+                    return 1
+                fi
+                POSITIONAL_ARGS+=("$1") # save positional numeric arg
+                shift # past argument
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
@@ -420,61 +426,104 @@ function schema_parse() #(program, description, allow_incomplete, args)
 
 
     if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'PARAMG' parameter is not set"
+        echo "[ERR] Positional 'PARAMG' parameter is not set"
+        echo "${schema_PROTOARG_USAGE}"
         return 1
     fi
-    schema_PARAMG="${POSITIONAL_ARGS[0]}"
-    schema_PARAMG_PRESENT=true
+    local value="${POSITIONAL_ARGS[0]}"
+    if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'PARAMG' parameter expected to be of type 'uint64' but value is '$value'"
+            echo "${schema_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        schema_PARAMG="${POSITIONAL_ARGS[0]}"
+        schema_PARAMG_PRESENT=true
+    fi
 
     if [ "$allow_incomplete" == false ] && [ 1 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'P_A_R_A_M_G_2' parameter is not set"
+        echo "[ERR] Positional 'P_A_R_A_M_G_2' parameter is not set"
+        echo "${schema_PROTOARG_USAGE}"
         return 1
     fi
-    schema_P_A_R_A_M_G_2="${POSITIONAL_ARGS[1]}"
-    schema_P_A_R_A_M_G_2_PRESENT=true
+    local value="${POSITIONAL_ARGS[1]}"
+    if [ "${value}" != true ] && [ "${value}" != false ]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'P_A_R_A_M_G_2' parameter expected to be of type 'bool' but value is '$value'"
+            echo "${schema_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        schema_P_A_R_A_M_G_2="${POSITIONAL_ARGS[1]}"
+        schema_P_A_R_A_M_G_2_PRESENT=true
+    fi
 
     if [ "$allow_incomplete" == false ] && [ 2 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'PARAM_FLOAT' parameter is not set"
+        echo "[ERR] Positional 'PARAM_FLOAT' parameter is not set"
+        echo "${schema_PROTOARG_USAGE}"
         return 1
     fi
-    schema_PARAM_FLOAT="${POSITIONAL_ARGS[2]}"
-    schema_PARAM_FLOAT_PRESENT=true
+    local value="${POSITIONAL_ARGS[2]}"
+    if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'PARAM_FLOAT' parameter expected to be of type 'float32' but value is '$value'"
+            echo "${schema_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        schema_PARAM_FLOAT="${POSITIONAL_ARGS[2]}"
+        schema_PARAM_FLOAT_PRESENT=true
+    fi
 
     if [ "$allow_incomplete" == false ] && [ 3 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'PARAM_DOUBLE' parameter is not set"
+        echo "[ERR] Positional 'PARAM_DOUBLE' parameter is not set"
+        echo "${schema_PROTOARG_USAGE}"
         return 1
     fi
-    schema_PARAM_DOUBLE="${POSITIONAL_ARGS[3]}"
-    schema_PARAM_DOUBLE_PRESENT=true
+    local value="${POSITIONAL_ARGS[3]}"
+    if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'PARAM_DOUBLE' parameter expected to be of type 'float64' but value is '$value'"
+            echo "${schema_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        schema_PARAM_DOUBLE="${POSITIONAL_ARGS[3]}"
+        schema_PARAM_DOUBLE_PRESENT=true
+    fi
 
     if [ "$allow_incomplete" == false ] && [ 4 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'PARAMH' parameter is not set"
+        echo "[ERR] Positional 'PARAMH' parameter is not set, needs to be at least 1"
+        echo "${schema_PROTOARG_USAGE}"
         return 1
     fi
-    schema_PARAMH="${POSITIONAL_ARGS[4]}"
-    schema_PARAMH_PRESENT=true
+    local expected=$((${#POSITIONAL_ARGS[@]} - 4))
+    local position=4
+    while [[ "$schema_PARAMH_COUNT" -lt "$expected" ]]; do
+        local value="${POSITIONAL_ARGS[$position]}"
+        if [ -z "0" ]; then
+            if [ "$allow_incomplete" == false ]; then
+                echo "[ERR] Positional 'PARAMH' parameter expected to be of type 'string' but value is '$value'"
+                echo "${schema_PROTOARG_USAGE}"
+                return 1
+            fi
+        else
+            schema_PARAMH+=("${POSITIONAL_ARGS[$position]}")
+            schema_PARAMH_COUNT=$(($schema_PARAMH_COUNT + 1))
+        fi
+        position=$((position + 1))
+    done
+    if [ "$schema_PARAMH_COUNT" -gt 0 ]; then
+        schema_PARAMH_PRESENT=true
+    fi
+
 
     if [ "$allow_incomplete" == false ] && [ $schema_paramE_PRESENT == false ]; then
         echo "[ERR] Required 'paramE' is missing"
         echo "${schema_PROTOARG_USAGE}"
         return 1
     fi
-
-        # repeated positional
-        if !allow_incomplete && flags.NArg() < 5 {
-        errschema_PARAMH := errors.New(`Required at least one positional 'PARAMH'`)
-        fmt.Println(errschema_PARAMH)
-        fmt.Println(Usage(program, description))
-        return config, errschema_PARAMH
-    }
-    for i := 4; i < flags.NArg(); i++ {
-        errschema_PARAMH := config.schema_PARAMH.Set(flags.Arg(i))
-        if !allow_incomplete && errschema_PARAMH != nil {
-            fmt.Println(errschema_PARAMH)
-            fmt.Println(Usage(program, description))
-            return config, errschema_PARAMH
-        }
-    }
 
     return 0
 }

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# find bash binary
-bash=$(which bash)
-
 # include parser
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 . $SCRIPTPATH/simple_pa.sh

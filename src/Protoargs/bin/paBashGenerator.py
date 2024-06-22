@@ -436,6 +436,10 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                                 if token.field == paTokenizer.pf_repeated:
                                     template = templateDefaultRepeated
                                     template_eq = templateDefaultRepeatedEquals
+                            else:
+                                if token.field == paTokenizer.pf_repeated:
+                                    template = templateDefaultRepeated
+                                    template_eq = templateDefaultRepeatedEquals
 
                             # argument with space
                             code += template \
@@ -457,16 +461,20 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                             code = code.replace("%CHECKER%", ( \
                                     r"""[ "${value}" != true ] && [ "${value}" != false ]""" if token.type == pt_bool \
                                     else r"""! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]"""  if token.type == pt_double or token.type == pt_float \
-                                    else r"""! [[ "${value}" =~ ^[+-][0-9]+$ ]]"""  if token.type == pt_int32 or token.type == pt_int64 \
+                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]"""  if token.type == pt_int32 or token.type == pt_int64 \
                                     else r"""! [[ "${value}" =~ ^[0-9]+$ ]]"""  if token.type == pt_uint32 or token.type == pt_uint64 \
-                                    else r"""[ "0" -ne "0" ]""" \
+                                    else r"""[ -z "0" ]""" \
                                     )) \
 
         code += """
             -*|--*)
-                echo "[ERR] Unknown option '$1'"
-                echo "${%PACKAGE%_PROTOARG_USAGE}"
-                return 1
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
+                    echo "[ERR] Unknown option '$1'"
+                    echo "${%PACKAGE%_PROTOARG_USAGE}"
+                    return 1
+                fi
+                POSITIONAL_ARGS+=("$1") # save positional numeric arg
+                shift # past argument
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
@@ -481,11 +489,49 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
 
         templatePositionalDefault = r"""
     if [ "$allow_incomplete" == false ] && [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional '%TRUENAME%' parameter is not set"
+        echo "[ERR] Positional '%TRUENAME%' parameter is not set"
+        echo "${%PACKAGE%_PROTOARG_USAGE}"
         return 1
     fi
-    %NAME%="${POSITIONAL_ARGS[%POSITION%]}"
-    %NAME%_PRESENT=true
+    local value="${POSITIONAL_ARGS[%POSITION%]}"
+    if %CHECKER%; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'"
+            echo "${%PACKAGE%_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        %NAME%="${POSITIONAL_ARGS[%POSITION%]}"
+        %NAME%_PRESENT=true
+    fi
+"""
+
+        templatePositionalRepeated = r"""
+    if [ "$allow_incomplete" == false ] && [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
+        echo "[ERR] Positional '%TRUENAME%' parameter is not set, needs to be at least 1"
+        echo "${%PACKAGE%_PROTOARG_USAGE}"
+        return 1
+    fi
+    local expected=$((${#POSITIONAL_ARGS[@]} - %POSITION%))
+    local position=%POSITION%
+    while [[ "$%NAME%_COUNT" -lt "$expected" ]]; do
+        local value="${POSITIONAL_ARGS[$position]}"
+        if %CHECKER%; then
+            if [ "$allow_incomplete" == false ]; then
+                echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'"
+                echo "${%PACKAGE%_PROTOARG_USAGE}"
+                return 1
+            fi
+        else
+            %NAME%+=("${POSITIONAL_ARGS[$position]}")
+            %NAME%_COUNT=$(($%NAME%_COUNT + 1))
+        fi
+        position=$((position + 1))
+    done
+    if [ "$%NAME%_COUNT" -gt 0 ]; then
+        %NAME%_PRESENT=true
+    fi
+
 """
 
         position = 0
@@ -513,11 +559,23 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                         if positional:
                             logging.debug("Fill positional name: " + str(token))
                             template = templatePositionalDefault
+                            if token.field == paTokenizer.pf_repeated:
+                                template = templatePositionalRepeated
                             code += template \
                                     .replace("%NAME%", self.__convertToBashName(token.name)) \
+                                    .replace("%TYPE%", bashType) \
                                     .replace("%TRUENAME%", token.name) \
                                     .replace("%POSITION%", str(position-1)) \
                                     .replace("%ARGUMENT%", argument) \
+
+                            # checker
+                            code = code.replace("%CHECKER%", ( \
+                                    r"""[ "${value}" != true ] && [ "${value}" != false ]""" if token.type == pt_bool \
+                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]"""  if token.type == pt_double or token.type == pt_float \
+                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]"""  if token.type == pt_int32 or token.type == pt_int64 \
+                                    else r"""! [[ "${value}" =~ ^[0-9]+$ ]]"""  if token.type == pt_uint32 or token.type == pt_uint64 \
+                                    else r"""[ -z "0" ]""" \
+                                    )) \
 
         return code
 
@@ -599,23 +657,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
 
         templatePositional = r""""""
 
-        templateRepeatedPositional = r"""
-        # repeated positional
-        if !allow_incomplete && flags.NArg() < %POSITION% {
-        err%NAME% := errors.New(`Required at least one positional '%OPTION%'`)
-        fmt.Println(err%NAME%)
-        fmt.Println(Usage(program, description))
-        return config, err%NAME%
-    }
-    for i := %INDEX%; i < flags.NArg(); i++ {
-        err%NAME% := %VARIABLE%.Set(flags.Arg(i))
-        if !allow_incomplete && err%NAME% != nil {
-            fmt.Println(err%NAME%)
-            fmt.Println(Usage(program, description))
-            return config, err%NAME%
-        }
-    }
-"""
+        templateRepeatedPositional = r""""""
         code = ""
         position = 0
 

@@ -83,9 +83,13 @@ function multy_command_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             -*|--*)
-                echo "[ERR] Unknown option '$1'"
-                echo "${multy_command_PROTOARG_USAGE}"
-                return 1
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
+                    echo "[ERR] Unknown option '$1'"
+                    echo "${multy_command_PROTOARG_USAGE}"
+                    return 1
+                fi
+                POSITIONAL_ARGS+=("$1") # save positional numeric arg
+                shift # past argument
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
@@ -98,11 +102,21 @@ function multy_command_parse() #(program, description, allow_incomplete, args)
 
 
     if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'COMMAND' parameter is not set"
+        echo "[ERR] Positional 'COMMAND' parameter is not set"
+        echo "${multy_command_PROTOARG_USAGE}"
         return 1
     fi
-    multy_command_COMMAND="${POSITIONAL_ARGS[0]}"
-    multy_command_COMMAND_PRESENT=true
+    local value="${POSITIONAL_ARGS[0]}"
+    if [ -z "0" ]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'COMMAND' parameter expected to be of type 'string' but value is '$value'"
+            echo "${multy_command_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        multy_command_COMMAND="${POSITIONAL_ARGS[0]}"
+        multy_command_COMMAND_PRESENT=true
+    fi
 
     return 0
 }

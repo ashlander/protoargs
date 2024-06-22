@@ -119,9 +119,13 @@ function multy_command_create_parse() #(program, description, allow_incomplete, 
                 ;;
 
             -*|--*)
-                echo "[ERR] Unknown option '$1'"
-                echo "${multy_command_create_PROTOARG_USAGE}"
-                return 1
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
+                    echo "[ERR] Unknown option '$1'"
+                    echo "${multy_command_create_PROTOARG_USAGE}"
+                    return 1
+                fi
+                POSITIONAL_ARGS+=("$1") # save positional numeric arg
+                shift # past argument
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
@@ -134,11 +138,21 @@ function multy_command_create_parse() #(program, description, allow_incomplete, 
 
 
     if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'PATH' parameter is not set"
+        echo "[ERR] Positional 'PATH' parameter is not set"
+        echo "${multy_command_create_PROTOARG_USAGE}"
         return 1
     fi
-    multy_command_create_PATH="${POSITIONAL_ARGS[0]}"
-    multy_command_create_PATH_PRESENT=true
+    local value="${POSITIONAL_ARGS[0]}"
+    if [ -z "0" ]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'PATH' parameter expected to be of type 'string' but value is '$value'"
+            echo "${multy_command_create_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        multy_command_create_PATH="${POSITIONAL_ARGS[0]}"
+        multy_command_create_PATH_PRESENT=true
+    fi
 
     return 0
 }

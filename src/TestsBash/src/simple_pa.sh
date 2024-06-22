@@ -247,7 +247,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
 
             --a-underscore)
                 local value=$2
-                if [ "0" -ne "0" ]; then
+                if [ -z "0" ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'a-underscore' of type string but the value is '${value}'"
                         echo "${simple_PROTOARG_USAGE}"
@@ -264,7 +264,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
 
             --a-underscore=*)
                 local value="${1#*=}"
-                if [ "0" -ne "0" ]; then
+                if [ -z "0" ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'a-underscore' of type string but the value is '${value}'"
                         echo "${simple_PROTOARG_USAGE}"
@@ -292,9 +292,13 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 ;;
 
             -*|--*)
-                echo "[ERR] Unknown option '$1'"
-                echo "${simple_PROTOARG_USAGE}"
-                return 1
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
+                    echo "[ERR] Unknown option '$1'"
+                    echo "${simple_PROTOARG_USAGE}"
+                    return 1
+                fi
+                POSITIONAL_ARGS+=("$1") # save positional numeric arg
+                shift # past argument
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg

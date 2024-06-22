@@ -99,9 +99,13 @@ function multy_command_copy_parse() #(program, description, allow_incomplete, ar
                 ;;
 
             -*|--*)
-                echo "[ERR] Unknown option '$1'"
-                echo "${multy_command_copy_PROTOARG_USAGE}"
-                return 1
+                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
+                    echo "[ERR] Unknown option '$1'"
+                    echo "${multy_command_copy_PROTOARG_USAGE}"
+                    return 1
+                fi
+                POSITIONAL_ARGS+=("$1") # save positional numeric arg
+                shift # past argument
                 ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
@@ -114,18 +118,38 @@ function multy_command_copy_parse() #(program, description, allow_incomplete, ar
 
 
     if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'SRC' parameter is not set"
+        echo "[ERR] Positional 'SRC' parameter is not set"
+        echo "${multy_command_copy_PROTOARG_USAGE}"
         return 1
     fi
-    multy_command_copy_SRC="${POSITIONAL_ARGS[0]}"
-    multy_command_copy_SRC_PRESENT=true
+    local value="${POSITIONAL_ARGS[0]}"
+    if [ -z "0" ]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'SRC' parameter expected to be of type 'string' but value is '$value'"
+            echo "${multy_command_copy_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        multy_command_copy_SRC="${POSITIONAL_ARGS[0]}"
+        multy_command_copy_SRC_PRESENT=true
+    fi
 
     if [ "$allow_incomplete" == false ] && [ 1 -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "Positional 'DST' parameter is not set"
+        echo "[ERR] Positional 'DST' parameter is not set"
+        echo "${multy_command_copy_PROTOARG_USAGE}"
         return 1
     fi
-    multy_command_copy_DST="${POSITIONAL_ARGS[1]}"
-    multy_command_copy_DST_PRESENT=true
+    local value="${POSITIONAL_ARGS[1]}"
+    if [ -z "0" ]; then
+        if [ "$allow_incomplete" == false ]; then
+            echo "[ERR] Positional 'DST' parameter expected to be of type 'string' but value is '$value'"
+            echo "${multy_command_copy_PROTOARG_USAGE}"
+            return 1
+        fi
+    else
+        multy_command_copy_DST="${POSITIONAL_ARGS[1]}"
+        multy_command_copy_DST_PRESENT=true
+    fi
 
     return 0
 }
