@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package bsw.protoargs.bools;
+
+message protoargs
+{
+    required bool req_bool  = 1;                    // Required bool
+    optional bool opt_bool  = 2 [ default = true];  // Optional bool
+    repeated bool rep_bool  = 3;                    // Repeated bool
+
+    optional bool OPTBOOL   = 4;                    // Positional bool param
+    optional bool ALTBOOL   = 5;                    // Positional bool param
+    repeated bool REOBOOL   = 6;                    // Positional repeating bool params, there may be only one repeating positional param at the end of positional block
+
+    optional bool printHelp = 7;                    // Print help and exit, check non-positional accepted after positional
+}//protoargs
+
+message protoargs_links
+{
+    optional string reqbool = 1 [default = "req_bool"];
+    optional string rb = 2 [default = "req_bool"];
+    optional string optbool = 3 [default = "opt_bool"];
+    optional string repbool = 4 [default = "rep_bool"];
+    optional string help = 5 [default = "printHelp"];
+}//protoargs

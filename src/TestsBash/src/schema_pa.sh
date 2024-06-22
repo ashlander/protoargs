@@ -90,8 +90,8 @@ function schema_usage() #(program, description)
 
     schema_PROTOARG_USAGE="$(cat << PROTOARGS_EOM
 usage: ${program} [-h] [-a paramA] [--b-long-param paramB] [-c paramC]
-                  [--d-long-param paramD] -e paramE [-f paramF [paramF ...]]
-                  [-i] [--j-long] [-k paramFloat] [-l paramDouble]
+                  [--d-long-param paramD] -e paramE [-f [paramF ...]] [-i]
+                  [--j-long] [-k paramFloat] [-l paramDouble]
                   PARAMG P_A_R_A_M_G_2 PARAM_FLOAT PARAM_DOUBLE PARAMH
                   [PARAMH ...]
 
@@ -128,8 +128,7 @@ optional arguments:
                         {OPTIONAL,type:float,default:""}
   -e paramE             String param which should be anyway
                         {REQUIRED,type:string,default:""}
-  -f paramF [paramF ...]
-                        Integer param which may encounter multiple times
+  -f [paramF ...]       Integer param which may encounter multiple times
                         {REPEATED,type:int32,default:""}
   -i                    Boolean arg with default value (despite it is declared
                         after positional args, that is not a problem)
@@ -500,7 +499,8 @@ function schema_parse() #(program, description, allow_incomplete, args)
     fi
     local expected=$((${#POSITIONAL_ARGS[@]} - 4))
     local position=4
-    while [[ "$schema_PARAMH_COUNT" -lt "$expected" ]]; do
+    local processed=0
+    while [[ "$schema_PARAMH_COUNT" -lt "$expected" ]] && [[ "$processed" -lt "$expected" ]]; do
         local value="${POSITIONAL_ARGS[$position]}"
         if [ -z "0" ]; then
             if [ "$allow_incomplete" == false ]; then
@@ -513,6 +513,7 @@ function schema_parse() #(program, description, allow_incomplete, args)
             schema_PARAMH_COUNT=$(($schema_PARAMH_COUNT + 1))
         fi
         position=$((position + 1))
+        processed=$((processed + 1))
     done
     if [ "$schema_PARAMH_COUNT" -gt 0 ]; then
         schema_PARAMH_PRESENT=true

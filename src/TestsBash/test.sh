@@ -24,3 +24,4 @@ bash=$(which bash)
 # testing
 $bash $SCRIPTPATH/src/test_simple.sh || exit 1
 $bash $SCRIPTPATH/src/test_schema.sh || exit 1
+$bash $SCRIPTPATH/src/test_bools.sh || exit 1

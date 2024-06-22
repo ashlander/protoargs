@@ -311,13 +311,13 @@ def parse(program, description, argv, allowIncomplete=False):
                                         .replace("%DEFAULTVAL%", \
                                         (", default=" + self.__convertToDefaultValue(token) if token.value and token.type != pt_bool else "") ) \
                                         .replace("%NARGS%", \
-                                        (r', nargs="+"' if token.field == paTokenizer.pf_repeated else "") ) \
+                                        (r', nargs="*"' if token.field == paTokenizer.pf_repeated else "") ) \
                                         .replace("%ACTIONS%", \
                                         (r', action="append"' if token.field == paTokenizer.pf_repeated else \
                                         (r', action="store_const"' if token.type == pt_bool else "")) ) \
                                         .replace("%CONST%", \
                                         (r', const=(not ' + self.__convertToDefaultValue(token) + ")" if token.type == pt_bool and token.value else \
-                                        (r', const=True' if token.type == pt_bool else "")) ) \
+                                        (r', const=True' if token.type == pt_bool and token.field != paTokenizer.pf_repeated else "")) ) \
 
                                 code += "\n"
                         else:

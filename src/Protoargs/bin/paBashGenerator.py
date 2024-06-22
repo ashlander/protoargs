@@ -428,7 +428,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                                 if token.field != paTokenizer.pf_repeated:
                                     template_eq = "" # no = for flag, like --help
                                 else:
-                                    template = "" # no boolean repeated without =
+                                    template = templateDefaultRepeated
                                     template_eq = templateDefaultRepeatedEquals
                             elif token.type == pt_string:
                                 template = templateString
@@ -514,7 +514,8 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
     fi
     local expected=$((${#POSITIONAL_ARGS[@]} - %POSITION%))
     local position=%POSITION%
-    while [[ "$%NAME%_COUNT" -lt "$expected" ]]; do
+    local processed=0
+    while [[ "$%NAME%_COUNT" -lt "$expected" ]] && [[ "$processed" -lt "$expected" ]]; do
         local value="${POSITIONAL_ARGS[$position]}"
         if %CHECKER%; then
             if [ "$allow_incomplete" == false ]; then
@@ -527,6 +528,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
             %NAME%_COUNT=$(($%NAME%_COUNT + 1))
         fi
         position=$((position + 1))
+        processed=$((processed + 1))
     done
     if [ "$%NAME%_COUNT" -gt 0 ]; then
         %NAME%_PRESENT=true

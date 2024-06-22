@@ -178,6 +178,23 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 shift # past argument=value
                 ;;
 
+            --flags)
+                local value=$2
+                if [ "${value}" != true ] && [ "${value}" != false ]; then
+                    if [ "$allow_incomplete" == false ]; then
+                        echo "[ERR] expected 'flags' of type bool but the value is '${value}'"
+                        echo "${simple_PROTOARG_USAGE}"
+                        return 1
+                    fi
+                else
+                    simple_flags+=("$2")
+                fi
+                simple_flags_PRESENT=true
+                simple_flags_COUNT=$((simple_flags_COUNT + 1))
+                shift # past argument
+                shift # past value
+                ;;
+
             --flags=*)
                 local value="${1#*=}"
                 if [ "${value}" != true ] && [ "${value}" != false ]; then
