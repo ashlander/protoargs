@@ -4,7 +4,7 @@
 function simple_prepareOptions()
 {
     # Common Variables
-    simple_PROTOARG_USAGE=""
+    simple_PROTOARGS_USAGE=""
 
     # Converted to --count
     simple_count=1
@@ -64,7 +64,7 @@ function simple_usage() #(program, description)
     local program="$1"
     local description=$(echo "$2" | fold -w 80)
 
-    simple_PROTOARG_USAGE="$(cat << PROTOARGS_EOM
+    simple_PROTOARGS_USAGE="$(cat << PROTOARGS_EOM
 usage: ${program} [-h] --count count [--configuration configuration]
                   [--flags [flags]] [--version] [-c c] --r-underscore
                   r_underscore [--o-underscore o_underscore]
@@ -139,7 +139,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'count' of type uint64 but the value is '${value}'"
-                        echo "${simple_PROTOARG_USAGE}"
+                        echo "${simple_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -155,7 +155,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 if ! [[ "${value}" =~ ^[0-9]+$ ]]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'count' of type uint64 but the value is '${value}'"
-                        echo "${simple_PROTOARG_USAGE}"
+                        echo "${simple_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -183,7 +183,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 if [ "${value}" != true ] && [ "${value}" != false ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'flags' of type bool but the value is '${value}'"
-                        echo "${simple_PROTOARG_USAGE}"
+                        echo "${simple_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -200,7 +200,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 if [ "${value}" != true ] && [ "${value}" != false ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'flags' of type bool but the value is '${value}'"
-                        echo "${simple_PROTOARG_USAGE}"
+                        echo "${simple_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -267,7 +267,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 if [ -z "0" ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'a-underscore' of type string but the value is '${value}'"
-                        echo "${simple_PROTOARG_USAGE}"
+                        echo "${simple_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -284,7 +284,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
                 if [ -z "0" ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'a-underscore' of type string but the value is '${value}'"
-                        echo "${simple_PROTOARG_USAGE}"
+                        echo "${simple_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -311,7 +311,7 @@ function simple_parse() #(program, description, allow_incomplete, args)
             -*|--*)
                 if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     echo "[ERR] Unknown option '$1'"
-                    echo "${simple_PROTOARG_USAGE}"
+                    echo "${simple_PROTOARGS_USAGE}"
                     return 1
                 fi
                 POSITIONAL_ARGS+=("$1") # save positional numeric arg
@@ -329,16 +329,62 @@ function simple_parse() #(program, description, allow_incomplete, args)
 
     if [ "$allow_incomplete" == false ] && [ $simple_count_PRESENT == false ]; then
         echo "[ERR] Required 'count' is missing"
-        echo "${simple_PROTOARG_USAGE}"
+        echo "${simple_PROTOARGS_USAGE}"
         return 1
     fi
 
     if [ "$allow_incomplete" == false ] && [ $simple_r_underscore_PRESENT == false ]; then
         echo "[ERR] Required 'r-underscore' is missing"
-        echo "${simple_PROTOARG_USAGE}"
+        echo "${simple_PROTOARGS_USAGE}"
         return 1
     fi
 
     return 0
 }
+
+########################################################################
+# Helpers
+########################################################################
+
+# Keep some number of first arguments, remove the rest
+#
+# Arguments:
+#
+# * `keep` - Number of arguments to keep
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `simple_PROTOARGS_ARGS` Resulting set of args
+function simple_remove_args_tail() #(keep, args)
+{
+    simple_PROTOARGS_ARGS=()
+    local keep=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$keep" ]]; do
+        simple_PROTOARGS_ARGS+=("$1")
+        shift
+        pos=$((pos + 1))
+    done
+}
+
+# Remove some number of first arguments, keep the rest
+#
+# Arguments:
+#
+# * `erase` - Number of arguments to remove
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `simple_PROTOARGS_ARGS` Resulting set of args
+function simple_keep_args_tail()
+{
+    local erase=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$erase" ]]; do
+        shift
+        pos=$((pos + 1))
+    done
+    simple_PROTOARGS_ARGS=("$@")
+}
+
 

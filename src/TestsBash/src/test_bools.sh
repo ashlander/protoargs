@@ -51,7 +51,7 @@ echo "##########################################"
 
 bools_usage "${program}" "${description}"
 if [ "$?" -eq 0 ]; then
-    echo "${bools_PROTOARG_USAGE}"
+    echo "${bools_PROTOARGS_USAGE}"
 else
     NOK=true
 fi
@@ -264,7 +264,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestMissingRequired"
+TEST_NAME="TestBoolsMissingRequired"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -295,7 +295,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestMissingRepeatedPositional"
+TEST_NAME="TestBoolsMissingRepeatedPositional"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -327,7 +327,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestPositionalWrongType"
+TEST_NAME="TestBoolsPositionalWrongType"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -359,7 +359,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestPositionalWrongTypeAllowed"
+TEST_NAME="TestBoolsPositionalWrongTypeAllowed"
 echo "${TEST_NAME}"
 echo "##########################################"
 

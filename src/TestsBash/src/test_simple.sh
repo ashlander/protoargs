@@ -44,13 +44,13 @@ function print_failed()
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestSchemaUsage" # no spaces allowed in test name
+TEST_NAME="TestSimpleUsage" # no spaces allowed in test name
 echo "${TEST_NAME}"
 echo "##########################################"
 
 simple_usage "${program}" "${description}"
 if [ "$?" -eq 0 ]; then
-    echo "${simple_PROTOARG_USAGE}"
+    echo "${simple_PROTOARGS_USAGE}"
 else
     NOK=true
 fi
@@ -60,7 +60,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestCheckAllPositiveSpaces"
+TEST_NAME="TestSimpleCheckAllPositiveSpaces"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -128,7 +128,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestCheckAllPositiveEquals"
+TEST_NAME="TestSimpleCheckAllPositiveEquals"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -195,7 +195,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestCheckNoPositional"
+TEST_NAME="TestSimpleCheckNoPositional"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -259,7 +259,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestCheckWrongType"
+TEST_NAME="TestSimpleCheckWrongType"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -281,7 +281,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestCheckAllowIncompleteWrongType"
+TEST_NAME="TestSimpleCheckAllowIncompleteWrongType"
 echo "${TEST_NAME}"
 echo "##########################################"
 

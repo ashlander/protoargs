@@ -4,7 +4,7 @@
 function bools_prepareOptions()
 {
     # Common Variables
-    bools_PROTOARG_USAGE=""
+    bools_PROTOARGS_USAGE=""
 
     # Required bool
     bools_req_bool=false
@@ -52,7 +52,7 @@ function bools_usage() #(program, description)
     local program="$1"
     local description=$(echo "$2" | fold -w 80)
 
-    bools_PROTOARG_USAGE="$(cat << PROTOARGS_EOM
+    bools_PROTOARGS_USAGE="$(cat << PROTOARGS_EOM
 usage: ${program} [-h] --rb [--optbool] [--repbool [rep_bool ...]]
                   OPTBOOL ALTBOOL REOBOOL [REOBOOL ...]
 
@@ -124,7 +124,7 @@ function bools_parse() #(program, description, allow_incomplete, args)
                 if [ "${value}" != true ] && [ "${value}" != false ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'rep-bool' of type bool but the value is '${value}'"
-                        echo "${bools_PROTOARG_USAGE}"
+                        echo "${bools_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -141,7 +141,7 @@ function bools_parse() #(program, description, allow_incomplete, args)
                 if [ "${value}" != true ] && [ "${value}" != false ]; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected 'rep-bool' of type bool but the value is '${value}'"
-                        echo "${bools_PROTOARG_USAGE}"
+                        echo "${bools_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -161,7 +161,7 @@ function bools_parse() #(program, description, allow_incomplete, args)
             -*|--*)
                 if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     echo "[ERR] Unknown option '$1'"
-                    echo "${bools_PROTOARG_USAGE}"
+                    echo "${bools_PROTOARGS_USAGE}"
                     return 1
                 fi
                 POSITIONAL_ARGS+=("$1") # save positional numeric arg
@@ -179,14 +179,14 @@ function bools_parse() #(program, description, allow_incomplete, args)
 
     if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
         echo "[ERR] Positional 'OPTBOOL' parameter is not set"
-        echo "${bools_PROTOARG_USAGE}"
+        echo "${bools_PROTOARGS_USAGE}"
         return 1
     fi
     local value="${POSITIONAL_ARGS[0]}"
     if [ "${value}" != true ] && [ "${value}" != false ]; then
         if [ "$allow_incomplete" == false ]; then
             echo "[ERR] Positional 'OPTBOOL' parameter expected to be of type 'bool' but value is '$value'"
-            echo "${bools_PROTOARG_USAGE}"
+            echo "${bools_PROTOARGS_USAGE}"
             return 1
         fi
     else
@@ -196,14 +196,14 @@ function bools_parse() #(program, description, allow_incomplete, args)
 
     if [ "$allow_incomplete" == false ] && [ 1 -ge ${#POSITIONAL_ARGS[@]} ]; then
         echo "[ERR] Positional 'ALTBOOL' parameter is not set"
-        echo "${bools_PROTOARG_USAGE}"
+        echo "${bools_PROTOARGS_USAGE}"
         return 1
     fi
     local value="${POSITIONAL_ARGS[1]}"
     if [ "${value}" != true ] && [ "${value}" != false ]; then
         if [ "$allow_incomplete" == false ]; then
             echo "[ERR] Positional 'ALTBOOL' parameter expected to be of type 'bool' but value is '$value'"
-            echo "${bools_PROTOARG_USAGE}"
+            echo "${bools_PROTOARGS_USAGE}"
             return 1
         fi
     else
@@ -213,7 +213,7 @@ function bools_parse() #(program, description, allow_incomplete, args)
 
     if [ "$allow_incomplete" == false ] && [ 2 -ge ${#POSITIONAL_ARGS[@]} ]; then
         echo "[ERR] Positional 'REOBOOL' parameter is not set, needs to be at least 1"
-        echo "${bools_PROTOARG_USAGE}"
+        echo "${bools_PROTOARGS_USAGE}"
         return 1
     fi
     local expected=$((${#POSITIONAL_ARGS[@]} - 2))
@@ -224,7 +224,7 @@ function bools_parse() #(program, description, allow_incomplete, args)
         if [ "${value}" != true ] && [ "${value}" != false ]; then
             if [ "$allow_incomplete" == false ]; then
                 echo "[ERR] Positional 'REOBOOL' parameter expected to be of type 'bool' but value is '$value'"
-                echo "${bools_PROTOARG_USAGE}"
+                echo "${bools_PROTOARGS_USAGE}"
                 return 1
             fi
         else
@@ -241,10 +241,56 @@ function bools_parse() #(program, description, allow_incomplete, args)
 
     if [ "$allow_incomplete" == false ] && [ $bools_req_bool_PRESENT == false ]; then
         echo "[ERR] Required 'req-bool' is missing"
-        echo "${bools_PROTOARG_USAGE}"
+        echo "${bools_PROTOARGS_USAGE}"
         return 1
     fi
 
     return 0
 }
+
+########################################################################
+# Helpers
+########################################################################
+
+# Keep some number of first arguments, remove the rest
+#
+# Arguments:
+#
+# * `keep` - Number of arguments to keep
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `bools_PROTOARGS_ARGS` Resulting set of args
+function bools_remove_args_tail() #(keep, args)
+{
+    bools_PROTOARGS_ARGS=()
+    local keep=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$keep" ]]; do
+        bools_PROTOARGS_ARGS+=("$1")
+        shift
+        pos=$((pos + 1))
+    done
+}
+
+# Remove some number of first arguments, keep the rest
+#
+# Arguments:
+#
+# * `erase` - Number of arguments to remove
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `bools_PROTOARGS_ARGS` Resulting set of args
+function bools_keep_args_tail()
+{
+    local erase=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$erase" ]]; do
+        shift
+        pos=$((pos + 1))
+    done
+    bools_PROTOARGS_ARGS=("$@")
+}
+
 

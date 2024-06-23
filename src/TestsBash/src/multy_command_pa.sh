@@ -4,7 +4,7 @@
 function multy_command_prepareOptions()
 {
     # Common Variables
-    multy_command_PROTOARG_USAGE=""
+    multy_command_PROTOARGS_USAGE=""
 
     # Print help and exit
     multy_command_help=false
@@ -30,7 +30,7 @@ function multy_command_usage() #(program, description)
     local program="$1"
     local description=$(echo "$2" | fold -w 80)
 
-    multy_command_PROTOARG_USAGE="$(cat << PROTOARGS_EOM
+    multy_command_PROTOARGS_USAGE="$(cat << PROTOARGS_EOM
 usage: ${program} [-h] COMMAND
 
 ${description}
@@ -85,7 +85,7 @@ function multy_command_parse() #(program, description, allow_incomplete, args)
             -*|--*)
                 if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     echo "[ERR] Unknown option '$1'"
-                    echo "${multy_command_PROTOARG_USAGE}"
+                    echo "${multy_command_PROTOARGS_USAGE}"
                     return 1
                 fi
                 POSITIONAL_ARGS+=("$1") # save positional numeric arg
@@ -103,14 +103,14 @@ function multy_command_parse() #(program, description, allow_incomplete, args)
 
     if [ "$allow_incomplete" == false ] && [ 0 -ge ${#POSITIONAL_ARGS[@]} ]; then
         echo "[ERR] Positional 'COMMAND' parameter is not set"
-        echo "${multy_command_PROTOARG_USAGE}"
+        echo "${multy_command_PROTOARGS_USAGE}"
         return 1
     fi
     local value="${POSITIONAL_ARGS[0]}"
     if [ -z "0" ]; then
         if [ "$allow_incomplete" == false ]; then
             echo "[ERR] Positional 'COMMAND' parameter expected to be of type 'string' but value is '$value'"
-            echo "${multy_command_PROTOARG_USAGE}"
+            echo "${multy_command_PROTOARGS_USAGE}"
             return 1
         fi
     else
@@ -120,4 +120,50 @@ function multy_command_parse() #(program, description, allow_incomplete, args)
 
     return 0
 }
+
+########################################################################
+# Helpers
+########################################################################
+
+# Keep some number of first arguments, remove the rest
+#
+# Arguments:
+#
+# * `keep` - Number of arguments to keep
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `multy_command_PROTOARGS_ARGS` Resulting set of args
+function multy_command_remove_args_tail() #(keep, args)
+{
+    multy_command_PROTOARGS_ARGS=()
+    local keep=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$keep" ]]; do
+        multy_command_PROTOARGS_ARGS+=("$1")
+        shift
+        pos=$((pos + 1))
+    done
+}
+
+# Remove some number of first arguments, keep the rest
+#
+# Arguments:
+#
+# * `erase` - Number of arguments to remove
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `multy_command_PROTOARGS_ARGS` Resulting set of args
+function multy_command_keep_args_tail()
+{
+    local erase=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$erase" ]]; do
+        shift
+        pos=$((pos + 1))
+    done
+    multy_command_PROTOARGS_ARGS=("$@")
+}
+
 

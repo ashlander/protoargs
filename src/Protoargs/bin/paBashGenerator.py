@@ -189,7 +189,7 @@ class Generator:
 function %PACKAGE%_prepareOptions()
 {
     # Common Variables
-    %PACKAGE%_PROTOARG_USAGE=""
+    %PACKAGE%_PROTOARGS_USAGE=""
 """
         # init variables
         body += self.__flagStructureFields(tokens)
@@ -214,7 +214,7 @@ function %PACKAGE%_usage() #(program, description)
     local program="$1"
     local description=$(echo "$2" | fold -w 80)
 
-    %PACKAGE%_PROTOARG_USAGE="$(cat << PROTOARGS_EOM
+    %PACKAGE%_PROTOARGS_USAGE="$(cat << PROTOARGS_EOM
 """
 
         body += self.__parasiteUsage(self.__path)
@@ -262,6 +262,52 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
     return 0
 }
 
+########################################################################
+# Helpers
+########################################################################
+
+# Keep some number of first arguments, remove the rest
+#
+# Arguments:
+#
+# * `keep` - Number of arguments to keep
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `%PACKAGE%_PROTOARGS_ARGS` Resulting set of args
+function %PACKAGE%_remove_args_tail() #(keep, args)
+{
+    %PACKAGE%_PROTOARGS_ARGS=()
+    local keep=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$keep" ]]; do
+        %PACKAGE%_PROTOARGS_ARGS+=("$1")
+        shift
+        pos=$((pos + 1))
+    done
+}
+
+# Remove some number of first arguments, keep the rest
+#
+# Arguments:
+#
+# * `erase` - Number of arguments to remove
+# * `args` - Command line arguments, list, use $@ to pass them
+#
+# returns `%PACKAGE%_PROTOARGS_ARGS` Resulting set of args
+function %PACKAGE%_keep_args_tail()
+{
+    local erase=$1
+    shift # past number
+    local pos=0
+    while [[ "$pos" -lt "$erase" ]]; do
+        shift
+        pos=$((pos + 1))
+    done
+    %PACKAGE%_PROTOARGS_ARGS=("$@")
+}
+
+
 """
 
         return (head + body + tail).replace("%PACKAGE%", self.__package)
@@ -273,7 +319,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
-                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -291,7 +337,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
-                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -328,7 +374,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
-                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -354,7 +400,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
                         echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
-                        echo "${%PACKAGE%_PROTOARG_USAGE}"
+                        echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
                 else
@@ -470,7 +516,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
             -*|--*)
                 if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
                     echo "[ERR] Unknown option '$1'"
-                    echo "${%PACKAGE%_PROTOARG_USAGE}"
+                    echo "${%PACKAGE%_PROTOARGS_USAGE}"
                     return 1
                 fi
                 POSITIONAL_ARGS+=("$1") # save positional numeric arg
@@ -490,14 +536,14 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
         templatePositionalDefault = r"""
     if [ "$allow_incomplete" == false ] && [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
         echo "[ERR] Positional '%TRUENAME%' parameter is not set"
-        echo "${%PACKAGE%_PROTOARG_USAGE}"
+        echo "${%PACKAGE%_PROTOARGS_USAGE}"
         return 1
     fi
     local value="${POSITIONAL_ARGS[%POSITION%]}"
     if %CHECKER%; then
         if [ "$allow_incomplete" == false ]; then
             echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'"
-            echo "${%PACKAGE%_PROTOARG_USAGE}"
+            echo "${%PACKAGE%_PROTOARGS_USAGE}"
             return 1
         fi
     else
@@ -509,7 +555,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
         templatePositionalRepeated = r"""
     if [ "$allow_incomplete" == false ] && [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
         echo "[ERR] Positional '%TRUENAME%' parameter is not set, needs to be at least 1"
-        echo "${%PACKAGE%_PROTOARG_USAGE}"
+        echo "${%PACKAGE%_PROTOARGS_USAGE}"
         return 1
     fi
     local expected=$((${#POSITIONAL_ARGS[@]} - %POSITION%))
@@ -520,7 +566,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
         if %CHECKER%; then
             if [ "$allow_incomplete" == false ]; then
                 echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'"
-                echo "${%PACKAGE%_PROTOARG_USAGE}"
+                echo "${%PACKAGE%_PROTOARGS_USAGE}"
                 return 1
             fi
         else
@@ -650,7 +696,7 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
         templateRequired = r"""
     if [ "$allow_incomplete" == false ] && [ $%NAME%_PRESENT == false ]; then
         echo "[ERR] Required '%OPTION%' is missing"
-        echo "${%PACKAGE%_PROTOARG_USAGE}"
+        echo "${%PACKAGE%_PROTOARGS_USAGE}"
         return 1
     fi
 """

@@ -5,7 +5,7 @@ SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 . $SCRIPTPATH/schema_pa.sh
 
 # common variables
-program="test_simple.sh"
+program="test_schema.sh"
 description="$(cat << PROTOARGS_EOM
 Program description
     and another line of description
@@ -50,7 +50,7 @@ echo "##########################################"
 
 schema_usage "${program}" "${description}"
 if [ "$?" -eq 0 ]; then
-    echo "${schema_PROTOARG_USAGE}"
+    echo "${schema_PROTOARGS_USAGE}"
 else
     NOK=true
 fi
@@ -60,7 +60,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestConnectShortAndLongArgsTogether"
+TEST_NAME="TestSchemaConnectShortAndLongArgsTogether"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -477,7 +477,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestMissingRequired"
+TEST_NAME="TestSchemaMissingRequired"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -511,7 +511,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestMissingRepeatedPositional"
+TEST_NAME="TestSchemaMissingRepeatedPositional"
 echo "${TEST_NAME}"
 echo "##########################################"
 
@@ -548,7 +548,7 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestPositionalWrongType"
+TEST_NAME="TestSchemaPositionalWrongType"
 echo "${TEST_NAME}"
 echo "##########################################"
 
