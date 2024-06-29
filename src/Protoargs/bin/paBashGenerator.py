@@ -62,7 +62,6 @@ class Generator:
         module = __import__(filename + "_pa")
         os.environ['COLUMNS']="80" # make default limit in 80 columns
 
-        # TODO escape '"' char
         return module.usage("${program}", "${description}")
 
     def getSourceFileData(self):
@@ -148,7 +147,7 @@ class Generator:
             return name
 
     # convert protobuf config types into go types
-    def __convertToGoType(self, token):
+    def __convertToBashType(self, token):
         pyType = token.type # if missing use original
 
         # get correct type
@@ -218,9 +217,6 @@ function %PACKAGE%_usage() #(program, description)
 """
 
         body += self.__parasiteUsage(self.__path)
-
-        # register usage arguments
-        #body += self.__flagProgramUsage(tokens)
 
         body += r"""
 PROTOARGS_EOM
@@ -459,7 +455,7 @@ function %PACKAGE%_keep_args_tail()
                         argument_eq = argument + "=*"
 
                     if append:
-                        bashType = self.__convertToGoType(token)
+                        bashType = self.__convertToBashType(token)
 
                         # count positionals expected
                         if positional:
@@ -602,7 +598,7 @@ function %PACKAGE%_keep_args_tail()
                             position += 1
 
                     if append:
-                        bashType = self.__convertToGoType(token)
+                        bashType = self.__convertToBashType(token)
 
                         if positional:
                             logging.debug("Fill positional name: " + str(token))
@@ -730,7 +726,7 @@ function %PACKAGE%_keep_args_tail()
 
                     if append:
                         logging.debug("Fill struct field name: " + str(token))
-                        bashType = self.__convertToGoType(token)
+                        bashType = self.__convertToBashType(token)
 
                         if positional:
                             position += 1
@@ -758,385 +754,5 @@ function %PACKAGE%_keep_args_tail()
                                 .replace("%POSITION%", str(position)) \
                                 .replace("%INDEX%", str(position-1))
 
-        return code
-
-    def __flagInitConfig(self, tokens):
-        template = """    config.%NAME% = %TYPE%{%DEFAULTVAL%, false}\n"""
-
-        code = """
-    config := new(Config)
-"""
-
-        start = False
-        for token in tokens:
-            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
-                start = True
-            elif start:
-                if token.directive == paTokenizer.pd_end:
-                    break
-                elif token.directive == paTokenizer.pd_field:
-                    append = True
-                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
-                    #if isLinks:
-                    #    links = sorted(self.__getLinks(tokens, token.name), key=lambda link: link.name)
-                    #    for link in links:
-                    #        if link.name == "h" or link.name == "help": # exclude predefined args
-                    #            append = False
-                    #            break
-
-                    if append:
-                        logging.debug("Create struct field name: " + str(token))
-                        bashType = self.__convertToGoType(token)
-                        if token.field == paTokenizer.pf_repeated:
-                            bashType = "Array" + bashType.capitalize() + "Flags"
-                        elif token.field == paTokenizer.pf_optional:
-                            bashType = bashType.capitalize() + "Value"
-                        elif token.field == paTokenizer.pf_required:
-                            bashType = bashType.capitalize() + "Value"
-
-                        if token.field != paTokenizer.pf_repeated:
-                            code += template \
-                                    .replace("%NAME%", self.__convertToBashName(token.name)) \
-                                    .replace("%TYPE%", bashType) \
-                                    .replace("%DESCRIPTION%", token.description) \
-                                    .replace("%DEFAULTVAL%", \
-                                    ("`" + token.value + "`" if token.type == pt_string else "false" if len(token.value) == 0 and token.type == pt_bool else "0" if len(token.value) == 0 else token.value) ) \
-
-        return code
-
-    def __flagProgramOptions(self, tokens):
-        templateOptional = r"""
-    flags.Var(&%VARIABLE%, `%OPTIONS%`, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:%DEFAULT%}`)"""
-        templateRequired = r"""
-    flags.Var(&%VARIABLE%, `%OPTIONS%`, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}`)"""
-        templateRepeated = r"""
-    flags.Var(&%VARIABLE%, `%OPTIONS%`, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}`)"""
-        templateOptionalBool = r"""
-    flags.BoolVar(&%VARIABLE%.val, `%OPTIONS%`, %DEFAULT%, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:%DEFAULT%}`)"""
-        templateRequiredBool = r"""
-    flags.BoolVar(&%VARIABLE%.val, `%OPTIONS%`, %DEFAULT%, `%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}`)"""
-
-        code = ""
-        positional = []
-
-        start = False
-        for token in tokens:
-            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
-                start = True
-            elif start:
-                if token.directive == paTokenizer.pd_end:
-                    break
-                elif token.directive == paTokenizer.pd_field:
-
-                    # set template
-                    t = templateOptional
-                    if token.field == paTokenizer.pf_required and token.type == pt_bool:
-                        t = templateRequiredBool
-                    elif token.field == paTokenizer.pf_optional and token.type == pt_bool:
-                        t = templateOptionalBool
-                    elif token.field == paTokenizer.pf_required:
-                        t = templateRequired
-                    elif token.field == paTokenizer.pf_repeated:
-                        t = templateRepeated
-
-                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
-                    if isLinks:
-                        links = sorted(self.__getLinks(tokens, token.name), key=lambda link: link.name)
-                        if len(links) > 0:
-                            # add all links as options
-                            logging.debug("links found for: " + str(token) + "\n" + str(links))
-                            for link in links:
-                                code += t \
-                                        .replace("%OPTIONS%", self.__convertToArgName(link.name)) \
-                                        .replace("%DESCRIPTION%",token.description) \
-                                        .replace("%PTYPE%", token.type) \
-                                        .replace("%ARGNAME%", token.name) \
-                                        .replace("%FREQUENCY%", token.field.upper()) \
-                                        .replace("%DEFAULT%", \
-                                        ("\"" + token.value + "\"" if token.type == pt_string else "false" if len(token.value) == 0 and token.type == pt_bool else "0" if len(token.value) == 0 else token.value) ) \
-                                        .replace("%TYPE%", \
-                                        (", type=" + self.__convertToGoType(token) if token.type != pt_bool else "") ) \
-                                        .replace("%REQUIRED%", \
-                                        ("true" if token.field == paTokenizer.pf_required else "false") ) \
-                                        .replace("%REPEATED%", \
-                                        ("true" if token.field == paTokenizer.pf_repeated else "false") ) \
-                                        .replace("%WITHVALUE%", \
-                                        ("true" if token.type != pt_bool else "false") ) \
-                                        .replace("%VARIABLE%", "config." + self.__convertToBashName(token.name))
-                        else:
-                            logging.debug("positional arg found: " + str(token))
-                            positional.append(token)
-                    else:
-                        logging.debug("convert main protoargs field name into long arg name: " + str(token))
-                        code += t \
-                                .replace("%FUNCTION%", self.__convertToGoType(token).capitalize() + "Var") \
-                                .replace("%OPTIONS%", self.__convertToArgName(token.name) ) \
-                                .replace("%DESCRIPTION%",token.description) \
-                                .replace("%PTYPE%", token.type) \
-                                .replace("%ARGNAME%", token.name) \
-                                .replace("%FREQUENCY%", token.field.upper()) \
-                                .replace("%DEFAULT%", \
-                                ("\"" + token.value + "\"" if token.type == pt_string else "false" if len(token.value) == 0 and token.type == pt_bool else "0" if len(token.value) == 0 else token.value) ) \
-                                .replace("%TYPE%", \
-                                (", type=" + self.__convertToGoType(token) if token.type != pt_bool else "") ) \
-                                .replace("%REQUIRED%", \
-                                ("true" if token.field == paTokenizer.pf_required else "false") ) \
-                                .replace("%REPEATED%", \
-                                ("true" if token.field == paTokenizer.pf_repeated else "false") ) \
-                                .replace("%WITHVALUE%", \
-                                ("true" if token.type != pt_bool or token.field == paTokenizer.pf_repeated else "false") ) \
-                                .replace("%VARIABLE%", "config." + self.__convertToBashName(token.name))
-
-                        #if len(token.name) == 1:
-                        #    code += "\n                   .short('" + self.__convertToArgName(token.name) + "')" # convert into args
-                        #else:
-                        #    code += "\n                   .long(r#\"" + self.__convertToArgName(token.name) + "\"#)" # convert into args
-
-                        #code += ")\n"
-                else:
-                    logging.warn("unknown token inside protoargs structure: " + str(token))
-
-        return code
-
-    def __flagProgramUsage(self, tokens):
-        template = r"""
-  %OPTIONS%%NEWLINE%%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:%DEFAULT%})"""
-        templateRequired = r"""
-  %OPTIONS%%NEWLINE%%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%})"""
-        templateRepeated = r"""
-  %OPTIONS%%NEWLINE%%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%})"""
-
-        shiftDetailed = 0
-
-        shift = 25 # number of spaces to shift for detailed description
-        shiftSpace = ""
-        for x in range(0,shift):
-            shiftSpace += " "
-
-        shortOptional = "" # short usage for optional arguments
-        shortRequired = "" # short usage required arguments
-        shortPositional = "" # short usage positional arguments
-        optional = "" # optional detailed description
-        required = "" # required detailed description
-        positional = "" # positional detailed description
-
-        start = False
-        for token in tokens:
-            if token.directive == paTokenizer.pd_message and token.name == paTokenizer.pa_main:
-                start = True
-            elif start:
-                if token.directive == paTokenizer.pd_end:
-                    break
-                elif token.directive == paTokenizer.pd_field:
-
-                    # set template
-                    t = template
-                    if token.field == paTokenizer.pf_required:
-                        t = templateRequired
-                    elif token.field == paTokenizer.pf_repeated:
-                        t = templateRepeated
-
-                    isLinks = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_links).valid()
-                    if isLinks:
-                        links = sorted(self.__getLinks(tokens, token.name), key=lambda link: link.name)
-                        if len(links) > 0:
-                            # add all links as options
-                            logging.debug("links found for: " + str(token) + "\n" + str(links))
-                            options = ""
-                            argument = ""
-                            for link in links:
-                                if len(options) > 0:
-                                    options += ", "
-                                    argument += "|"
-                                #options += self.__convertToArgName(link.name) # convert into args
-                                if len(link.name) == 1:
-                                    options += "-" + self.__convertToArgName(link.name)
-                                    argument += "-" + self.__convertToArgName(link.name)
-                                else:
-                                    options += "--" + self.__convertToArgName(link.name)
-                                    argument += "--" + self.__convertToArgName(link.name)
-
-                            if token.type != pt_bool:
-                                options += " " + token.name
-
-                            if options:
-                                spaces = shift - (1 + len(options)) # calculate needed spaces
-                                for x in range(1,spaces):
-                                    options += " "
-                                updated = t \
-                                        .replace("%OPTIONS%", options) \
-                                        .replace("%NEWLINE%", "\n" + shiftSpace if spaces < 3 else "") \
-                                        .replace("%DESCRIPTION%",token.description) \
-                                        .replace("%PTYPE%", token.type) \
-                                        .replace("%ARGNAME%", token.name) \
-                                        .replace("%FREQUENCY%", token.field.upper()) \
-                                        .replace("%DEFAULT%", \
-                                        ("\"" + token.value + "\"" if token.type == pt_string else "false" if len(token.value) == 0 and token.type == pt_bool else "0" if len(token.value) == 0 else token.value) ) \
-                                        .replace("%TYPE%", \
-                                        (", type=" + self.__convertToGoType(token) if token.type != pt_bool else "") ) \
-                                        .replace("%REQUIRED%", \
-                                        ("true" if token.field == paTokenizer.pf_required else "false") ) \
-                                        .replace("%REPEATED%", \
-                                        ("true" if token.field == paTokenizer.pf_repeated else "false") ) \
-                                        .replace("%WITHVALUE%", \
-                                        ("true" if token.type != pt_bool else "false") ) \
-                                        .replace("%VARIABLE%", "config." + token.name)
-
-
-                                if token.field == paTokenizer.pf_required:
-                                    if len(shortRequired) > 0:
-                                        shortRequired += " "
-                                    shortRequired += argument
-                                    if token.type != pt_bool:
-                                        shortRequired += " " + token.name
-                                    required += updated
-                                elif token.field == paTokenizer.pf_repeated:
-                                    if len(shortOptional) > 0:
-                                        shortOptional += " "
-                                    shortOptional += "[" + argument
-                                    if token.type != pt_bool:
-                                        shortOptional += " " + token.name + " [" + argument + " " + token.name + " ...]" + "]"
-                                    else:
-                                        shortOptional += " [" + argument + " ...]" + "]"
-                                    optional += updated
-                                else:
-                                    if len(shortOptional) > 0:
-                                        shortOptional += " "
-                                    shortOptional += "[" + argument
-                                    if token.type != pt_bool:
-                                        shortOptional += " " + token.name + "]"
-                                    else:
-                                        shortOptional += "]"
-                                    optional += updated
-                        else:
-                            options = token.name
-                            spaces = shift - (1 + len(options)) # calculate needed spaces
-                            for x in range(1,spaces):
-                                options += " "
-                            updated = templateRequired \
-                                    .replace("%OPTIONS%", options) \
-                                    .replace("%NEWLINE%", "\n" + shiftSpace if spaces < 3 else "") \
-                                    .replace("%DESCRIPTION%",token.description) \
-                                    .replace("%PTYPE%", token.type) \
-                                    .replace("%ARGNAME%", token.name) \
-                                    .replace("%FREQUENCY%", paTokenizer.pf_required.upper()) \
-                                    .replace("%DEFAULT%", \
-                                    ("\"" + token.value + "\"" if token.type == pt_string else token.value) ) \
-                                    .replace("%TYPE%", \
-                                    (", type=" + self.__convertToGoType(token) if token.type != pt_bool else "") ) \
-                                    .replace("%REQUIRED%", \
-                                    ("true" if token.field == paTokenizer.pf_required else "false") ) \
-                                    .replace("%REPEATED%", \
-                                    ("true" if token.field == paTokenizer.pf_repeated else "false") ) \
-                                    .replace("%WITHVALUE%", \
-                                    ("true" if token.type != pt_bool else "false") ) \
-                                    .replace("%VARIABLE%", "config." + token.name)
-
-                            logging.debug("positional arg found: " + str(token))
-                            if len(shortPositional) > 0:
-                                shortPositional += " "
-                            shortPositional += token.name
-                            if token.field == paTokenizer.pf_repeated:
-                                shortPositional += " [" + token.name + " ...]"
-                            positional += updated
-                    else:
-                        logging.debug("convert main protoargs field name into long arg name: " + str(token))
-                        if len(token.name) == 1:
-                            argument = "-" + self.__convertToArgName(token.name)
-                        else:
-                            argument = "--" + self.__convertToArgName(token.name)
-                        options = argument
-                        if token.type != pt_bool:
-                            options += " value"
-                        spaces = shift - (1 + len(options)) # calculate needed spaces
-                        for x in range(1,spaces):
-                            options += " "
-                        updated = t \
-                                .replace("%FUNCTION%", self.__convertToGoType(token).capitalize() + "Var") \
-                                .replace("%OPTIONS%", options) \
-                                .replace("%NEWLINE%", "\n" + shiftSpace if spaces < 3 else "") \
-                                .replace("%DESCRIPTION%",token.description) \
-                                .replace("%PTYPE%", token.type) \
-                                .replace("%ARGNAME%", token.name) \
-                                .replace("%FREQUENCY%", token.field.upper()) \
-                                .replace("%DEFAULT%", \
-                                ("\"" + token.value + "\"" if token.type == pt_string else "false" if len(token.value) == 0 and token.type == pt_bool else "0" if len(token.value) == 0 else token.value) ) \
-                                .replace("%TYPE%", \
-                                (", type=" + self.__convertToGoType(token) if token.type != pt_bool else "") ) \
-                                .replace("%REQUIRED%", \
-                                ("true" if token.field == paTokenizer.pf_required else "false") ) \
-                                .replace("%REPEATED%", \
-                                ("true" if token.field == paTokenizer.pf_repeated else "false") ) \
-                                .replace("%WITHVALUE%", \
-                                ("true" if token.type != pt_bool or token.field == paTokenizer.pf_repeated else "false") ) \
-                                .replace("%VARIABLE%", "config." + token.name)
-
-                        if token.field == paTokenizer.pf_required:
-                            if len(shortRequired) > 0:
-                                shortRequired += " "
-                            shortRequired += argument
-                            if token.type != pt_bool:
-                                shortRequired += " value"
-                            required += updated
-                        elif token.field == paTokenizer.pf_repeated:
-                            if len(shortOptional) > 0:
-                                shortOptional += " "
-                            shortOptional += "[" + argument
-                            if token.type != pt_bool:
-                                shortOptional += " value [" + argument + " value ...]" + "]"
-                            else:
-                                shortOptional += " [" + argument + " ...]" + "]"
-                            optional += updated
-                        else:
-                            if len(shortOptional) > 0:
-                                shortOptional += " "
-                            shortOptional += "[" + argument
-                            if token.type != pt_bool:
-                                shortOptional += " value]"
-                            else:
-                                shortOptional += "]"
-                            optional += updated
-
-                else:
-                    logging.warn("unknown token inside protoargs structure: " + str(token))
-
-        # generate final usage code
-        code = r"""    block = "\nusage: ${program} """
-        if len(shortRequired):
-            code += " " + shortRequired
-        if len(shortOptional):
-            code += " " + shortOptional
-        if len(shortPositional):
-            code += " " + shortPositional
-        code += "\""
-        code += r"""
-    usage = splitShortUsage "${block}" "${limit}"
-"""
-
-        code += r"""
-    usage += "\n\n"
-    usage += "${description}"
-"""
-
-# TODO
-#        if len(required) > 0:
-#            code += r"""    usage += "\n\nrequired arguments:""" + "\"\n"
-#            code += "    block = \"" + required + "\"\n"
-#            code += r"""    usage += splitUsage(block, limit)""" + "\n"
-#
-#        if len(positional) > 0:
-#            code += r"""    usage += "\n\nrequired positional arguments:""" + "\"\n"
-#            code += "    block = \"" + positional + "\"\n"
-#            code += r"""    usage += splitUsage(block, limit)""" + "\n"
-#
-#        if len(optional) > 0:
-#            #code += r"""    usage += "\n\n" + `optional arguments:`""" + "\n"
-#            #code += r"""    usage += `""" + optional + r"""`""" + "\n"
-#
-#            code += r"""    usage += "\n\n" + `optional arguments:`""" + "\n"
-#            code += r"""    block = `""" + optional + r"""`""" + "\n"
-#            code += r"""    usage += splitUsage(block, limit)""" + "\n"
-
-        code += r"""    usage += "\n" """
         return code
 
