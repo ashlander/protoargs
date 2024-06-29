@@ -101,31 +101,43 @@ schema_parse "${program}" "${description}" false \
 
 if [ "$?" -eq 0 ]; then
     # check defaults
-    if [ "$schema_paramA_PRESENT" == true ] || [ "$schema_paramA" != "// tricky default value" ]; then
+    if [ "$schema_paramA_PRESENT" != false ] || [ "$schema_paramA" != "// tricky default value" ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_paramB_PRESENT " == true ] || [ "$schema_paramB" -ne 10 ]; then
+    if [ "$schema_paramB_PRESENT" != false ] || [ "$schema_paramB" -ne 10 ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_paramC_PRESENT" == true ] || [ "$schema_paramC" -ne 0 ]; then
+    if [ "$schema_paramC_PRESENT" != false ] || [ "$schema_paramC" -ne 0 ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_paramD_PRESENT" == true ] || [ $(echo "$schema_paramD == 0.0" | bc -l) == false ]; then
+    if [ "$schema_paramD_PRESENT" != false ] || [ $(echo "$schema_paramD == 0.0" | bc -l) == false ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_paramE_PRESENT" == false ] || [ "$schema_paramE" != "valueE" ]; then
+    if [ "$schema_paramE_PRESENT" != true ] || [ "$schema_paramE" != "valueE" ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_paramF_PRESENT" == true ] || [ "${#schema_paramF[@]}" -ne 0 ] || [ "$schema_paramF_COUNT" -ne 0 ]; then
+    if [ "$schema_paramF_PRESENT" != false ] || [ "${#schema_paramF[@]}" -ne 0 ] || [ "$schema_paramF_COUNT" -ne 0 ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_param_I_PRESENT" == true ] || [ "$schema_param_I" == false ]; then
+    if [ "$schema_param_I_PRESENT" != false ] || [ "$schema_param_I" != true ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_param_J_PRESENT" == true ] || [ "$schema_param_J" == true ]; then
+    if [ "$schema_param_J_PRESENT" != false ] || [ "$schema_param_J" != false ]; then
         fail_line $LINENO
     fi
-    if [ "$schema_PARAMH_PRESENT" == false ] || [ "${#schema_PARAMH[@]}" -ne 3 ] || [ "$schema_PARAMH_COUNT" -ne 3 ]; then
+    if [ "$schema_PARAMG_PRESENT" != true ] || [ "$schema_PARAMG" -ne 50 ]; then
+        fail_line $LINENO
+    fi
+    if [ "$schema_P_A_R_A_M_G_2_PRESENT" != true ] || [ "$schema_P_A_R_A_M_G_2" != false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$schema_PARAM_FLOAT_PRESENT" != true ] || [ $(echo "$schema_PARAM_FLOAT == 0.5" | bc -l) == false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$schema_PARAM_DOUBLE_PRESENT" != true ] || [ $(echo "$schema_PARAM_DOUBLE == 0.7" | bc -l) == false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$schema_PARAMH_PRESENT" != true ] || [ "${#schema_PARAMH[@]}" -ne 3 ] || [ "$schema_PARAMH_COUNT" -ne 3 ]; then
         fail_line $LINENO
     fi
 else
