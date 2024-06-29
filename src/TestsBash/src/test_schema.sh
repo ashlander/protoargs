@@ -66,6 +66,7 @@ echo "##########################################"
 
 schema_parse "${program}" "${description}" false \
         -e "valueE" \
+        -a "somevalue1" \
         --a-long-param "somevalue" \
         50 \
         true \

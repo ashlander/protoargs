@@ -22,7 +22,7 @@ py_int32 = "int"
 py_uint32 = "int"
 py_int64 = "int"
 py_uint64 = "int"
-py_bool = "bool"
+py_bool = "str2bool"
 py_string = "str"
 
 # END GLOBALS ###################################3
@@ -145,6 +145,17 @@ class Generator:
     # generate python source file content
     def __generateSourceFromTokens(self, tokens):
         head = """import argparse\n
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 """
 
         tail = ""
@@ -180,7 +191,7 @@ def usage(program, description=""):
 
         # add prepareOptions function binding
         body += """
-def parse(program, description, argv, allowIncomplete=False):
+def parse(program, description, argv, known=False):
 """
         # add arguments parsing using argparse
         body += self.__argparseParsingBegin(tokens)
@@ -263,8 +274,8 @@ def parse(program, description, argv, allowIncomplete=False):
         return code
 
     def __argparseProgramOptions(self, tokens):
-        template = r'parser.add_argument(r"""%OPTIONS%""", help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %TYPE% %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
-        templateRequired = r'parser.add_argument(r"""%OPTIONS%""", required=True, help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %TYPE% %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
+        template = r'parser.add_argument(r"""%OPTIONS%""" %TYPE%, help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
+        templateRequired = r'parser.add_argument(r"""%OPTIONS%""" %TYPE%, required=True, help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
         code = ""
         positional = []
 
@@ -307,17 +318,16 @@ def parse(program, description, argv, allowIncomplete=False):
                                         .replace("%FREQUENCY%", token.field.upper()) \
                                         .replace("%DEFAULT%", token.value) \
                                         .replace("%TYPE%", \
-                                        (", type=" + self.__convertToPyType(token) if token.type != pt_bool else "") ) \
+                                        (", type=" + self.__convertToPyType(token) if token.field == paTokenizer.pf_repeated or (token.value and token.value == "true") or token.type != pt_bool else "") ) \
                                         .replace("%DEFAULTVAL%", \
-                                        (", default=" + self.__convertToDefaultValue(token) if token.value and token.type != pt_bool else "") ) \
+                                        (", default=" + self.__convertToDefaultValue(token) if token.value else "") ) \
                                         .replace("%NARGS%", \
-                                        (r', nargs="*"' if token.field == paTokenizer.pf_repeated else "") ) \
+                                        (r', nargs="?"' if token.field == paTokenizer.pf_repeated and token.type != pt_bool else "") ) \
                                         .replace("%ACTIONS%", \
                                         (r', action="append"' if token.field == paTokenizer.pf_repeated else \
-                                        (r', action="store_const"' if token.type == pt_bool else "")) ) \
+                                        (r', action="store_const"' if (not token.value or token.value == "false") and token.type == pt_bool else "")) ) \
                                         .replace("%CONST%", \
-                                        (r', const=(not ' + self.__convertToDefaultValue(token) + ")" if token.type == pt_bool and token.value else \
-                                        (r', const=True' if token.type == pt_bool and token.field != paTokenizer.pf_repeated else "")) ) \
+                                        (r', const=True' if token.type == pt_bool and (not token.value or token.value == "false") and token.field != paTokenizer.pf_repeated else "") ) \
 
                                 code += "\n"
                         else:
@@ -335,17 +345,16 @@ def parse(program, description, argv, allowIncomplete=False):
                                     .replace("%FREQUENCY%", token.field.upper()) \
                                     .replace("%DEFAULT%", token.value) \
                                     .replace("%TYPE%", \
-                                    (", type=" + self.__convertToPyType(token) if token.type != pt_bool else "") ) \
+                                    (", type=" + self.__convertToPyType(token) if token.field == paTokenizer.pf_repeated or (token.value  and token.value == "true") or token.type != pt_bool else "") ) \
                                     .replace("%DEFAULTVAL%", \
-                                    (", default=" + self.__convertToDefaultValue(token) if token.value and token.type != pt_bool else "") ) \
+                                    (", default=" + self.__convertToDefaultValue(token) if token.value else "") ) \
                                     .replace("%NARGS%", \
-                                    (r', nargs="?"' if token.field == paTokenizer.pf_repeated else "") ) \
+                                    (r', nargs="?"' if token.field == paTokenizer.pf_repeated and token.type != pt_bool else "") ) \
                                     .replace("%ACTIONS%", \
                                     (r', action="append"' if token.field == paTokenizer.pf_repeated else \
-                                    (r', action="store_const"' if token.type == pt_bool else "")) ) \
+                                    (r', action="store_const"' if (not token.value or token.value == "false") and token.type == pt_bool else "")) ) \
                                     .replace("%CONST%", \
-                                    (r', const=(not ' + self.__convertToDefaultValue(token) + ")" if token.type == pt_bool and token.value else \
-                                    (r', const=True' if token.type == pt_bool else "")) ) \
+                                    (r', const=True' if token.type == pt_bool and (not token.value or token.value == "false") and token.field != paTokenizer.pf_repeated else "") ) \
 
                             code += "\n"
                         else:
@@ -363,8 +372,8 @@ def parse(program, description, argv, allowIncomplete=False):
         # add argparse parsing
         code += """
     args = None
-    if allowIncomplete:
-        args = parser.parse_known_args(argv)
+    if known:
+        args, _ = parser.parse_known_args(argv)
     else:
         args = parser.parse_args(argv)
 """

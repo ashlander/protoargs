@@ -53,24 +53,23 @@ function bools_usage() #(program, description)
     local description=$(echo "$2" | fold -w 80)
 
     bools_PROTOARGS_USAGE="$(cat << PROTOARGS_EOM
-usage: ${program} [-h] --rb [--optbool] [--repbool [rep_bool ...]]
+usage: ${program} [-h] --rb [--optbool opt_bool] [--repbool rep_bool]
                   OPTBOOL ALTBOOL REOBOOL [REOBOOL ...]
 
 ${description}
 
 positional arguments:
-  OPTBOOL               Positional bool param {REQUIRED,type:bool}
-  ALTBOOL               Positional bool param {REQUIRED,type:bool}
-  REOBOOL               Positional repeating bool params, there may be only
-                        one repeating positional param at the end of
-                        positional block {REQUIRED,type:bool}
+  OPTBOOL             Positional bool param {REQUIRED,type:bool}
+  ALTBOOL             Positional bool param {REQUIRED,type:bool}
+  REOBOOL             Positional repeating bool params, there may be only one
+                      repeating positional param at the end of positional
+                      block {REQUIRED,type:bool}
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --rb, --reqbool       Required bool {REQUIRED,type:bool,default:""}
-  --optbool             Optional bool {OPTIONAL,type:bool,default:"true"}
-  --repbool [rep_bool ...]
-                        Repeated bool {REPEATED,type:bool,default:""}
+  -h, --help          show this help message and exit
+  --rb, --reqbool     Required bool {REQUIRED,type:bool,default:""}
+  --optbool opt_bool  Optional bool {OPTIONAL,type:bool,default:"true"}
+  --repbool rep_bool  Repeated bool {REPEATED,type:bool,default:""}
 
 PROTOARGS_EOM
 )"

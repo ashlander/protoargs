@@ -90,7 +90,7 @@ function schema_usage() #(program, description)
 
     schema_PROTOARGS_USAGE="$(cat << PROTOARGS_EOM
 usage: ${program} [-h] [-a paramA] [--b-long-param paramB] [-c paramC]
-                  [--d-long-param paramD] -e paramE [-f [paramF ...]] [-i]
+                  [--d-long-param paramD] -e paramE [-f [paramF]] [-i param_I]
                   [--j-long] [-k paramFloat] [-l paramDouble]
                   PARAMG P_A_R_A_M_G_2 PARAM_FLOAT PARAM_DOUBLE PARAMH
                   [PARAMH ...]
@@ -128,9 +128,9 @@ optional arguments:
                         {OPTIONAL,type:float,default:""}
   -e paramE             String param which should be anyway
                         {REQUIRED,type:string,default:""}
-  -f [paramF ...]       Integer param which may encounter multiple times
+  -f [paramF]           Integer param which may encounter multiple times
                         {REPEATED,type:int32,default:""}
-  -i                    Boolean arg with default value (despite it is declared
+  -i param_I            Boolean arg with default value (despite it is declared
                         after positional args, that is not a problem)
                         {OPTIONAL,type:bool,default:"true"}
   --j-long              Boolean arg without default value

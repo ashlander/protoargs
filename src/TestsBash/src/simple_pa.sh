@@ -66,7 +66,7 @@ function simple_usage() #(program, description)
 
     simple_PROTOARGS_USAGE="$(cat << PROTOARGS_EOM
 usage: ${program} [-h] --count count [--configuration configuration]
-                  [--flags [flags]] [--version] [-c c] --r-underscore
+                  [--flags flags] [--version] [-c c] --r-underscore
                   r_underscore [--o-underscore o_underscore]
                   [--a-underscore [a_underscore]]
                   [--s-quote-in-descr s_quote_in_descr]
@@ -80,7 +80,7 @@ optional arguments:
   --configuration configuration
                         Converted to --configuration
                         {OPTIONAL,type:string,default:""}
-  --flags [flags]       Converted to --flags, each encounter will be stored in
+  --flags flags         Converted to --flags, each encounter will be stored in
                         list {REPEATED,type:bool,default:""}
   --version             Converted to --version
                         {OPTIONAL,type:bool,default:"false"}
