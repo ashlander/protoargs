@@ -1,29 +1,26 @@
 Description
 ===========
 
-**Protoargs** is python proto file compiler, which generates arguments parser using argparse_.
+**Protoargs** is python proto file compiler, which generates arguments parser using bash functionality.
 
-This documentation part shows python parser generation and usage based on existing configuration. Start from main_ page for better description and proto file configuration rules.
-
-
-.. _argparse: https://docs.python.org/3/library/argparse.html
+This documentation part shows bash parser generation and usage based on existing configuration. Start from main_ page for better description and proto file configuration rules.
 
 .. _main: https://github.com/ashlander/protoargs/tree/master
 
 **PROS**:
 
-+ Creates python args parser using argparse_.
++ Creates bash args parser
 + Simplifies creation even complex commands like 'command subcommand [subcommand_args]'
++ No dependencies
 
 **CONS**:
 
-- argparse_ is actually way more powerful
-- Dependencies, not standalone (argparse_)
+- There should be one for sure
 
 Usage
 =====
 
-.. image:: ../../src/Protoargs/img/pythonschema.png
+.. image:: ../../src/Protoargs/img/bashschema.png
    :align: center
 
 First of all, you are interested in python script file in this project, python scripts are located in bin_ directory.
@@ -32,13 +29,13 @@ First of all, you are interested in python script file in this project, python s
 
 .. code:: bash
 
-   python protoargs.py -o <out DIR> -i PROTOFILE --py
+   python protoargs.py -o <out DIR> -i PROTOFILE --bash
                out DIR         [mandatory] path to output directory
                PROTOFILE       [mandatory] path to proto file
 
 ..
 
-You should get 1 file as result: **_pa.py**. Attach it to your project and now you are ready to move forward.
+You should get 1 file as result: **_pa.sh**. Attach it to your project and now you are ready to move forward.
 
 Example of Usage Output
 =======================
@@ -152,6 +149,8 @@ Your application usage output
 
 ..
 
+Note: this version of bash parser generator uses python generator to generate Usage output. Yea, yea I am lazy.
+
 Simple Example
 ==============
 
@@ -176,75 +175,60 @@ Let's take our first simple example (as a reminder *-p NUM* and *--param=NUM* ar
 
 ..
 
-Now what you need is the file ending with **_pa.py**, it contains interface you need. It will look like several functions which you may use. Note: namespaces are not used currently.
 
-**Note:** *-h/--help* arguments are predefined within the argparse_, so variant from proto file will be skipped, and warning message output
+Now what you need is the file ending with **_pa.sh**, it contains interface you need. It will look like several functions which you may use. Note: namespaces are not used currently, but file name is used, to prevent conflicts.
 
-.. code:: python
+.. code:: bash
 
-   def usage(program, description="")
+   function simple_usage() #(program, description)
 
-   def parse(program, description, argv, known=False)
+   function simple_parse() #(program, description, allow_incomplete, args)
 
 ..
 
-They are quite clear, **usage** outputs help message, and the **parse** parses arguments. Both accept program name and description which you want to see in help, as long as **parse** method may call **usage** internally if something goes wrong.
+Note: **simple_** is file name prefix. It included both in functions and variable names to avoid collisions.
 
-**known** option if set to true, will return all successfully parsed arguments ignoring trailing ones (read argparse_ documentation about **parse_known_args**).
+They are quite clear, **{filename}_usage** outputs help message, and the **{filename}_parse** parses arguments. Both accept program name and description which you want to see in help, as long as **parse** method may call **usage** internally if something goes wrong.
+
+**allow_incomplete** option if set to true, will return all successfully parsed arguments ignoring failed ones. This helps you to parse e.g. **--help** argument and avoid any errors for missing required parameters.
+
+If you need output usage, first you call **usage** function, the result will be written to **{filename}_PROTOARGS_USAGE** variable.
 
 Let's go for code:
 
-.. code:: python
+.. code:: bash
 
-   import sys
-   import simple_pa
+    . simple_pa.sh
 
-   class ArgsParser:
+    # check first for possible help with allow_incomplete
+    simple_parse "${program}" "${description}" true $@
 
-       def parse(self, argv):
-           self.config = simple_pa.parse("schema", "Test schema", argv)
+    if [ "$?" -eq 0 ]; then
+        if [ "$simple_help" == true ]; then
+            simple_usage
+            echo "${simple_PROTOARGS_USAGE}"
+            exit 0
+        fi
+    else
+        exit 1
+    fi
 
-   if __name__ == "__main__":
-       parser = ArgsParser()
-       parser.parse(sys.argv[1:])
-       print(parser.config)
-       print(parser.p)
-       ...
+    # second run without allow_incomplete
+    simple_parse "${program}" "${description}" false $@
+
+    if [ "$?" -eq 0 ]; then
+        if [ "$simple_p_PRESENT" == true ]; then
+            echo "$simple_p"
+        fi
+        ...
+    else
+        exit 1
+    fi
+    ...
 
 ..
 
 Well that should be simple enough to start your going.
-
-Booleans
-========
-
-Some word about boolean fields, as they have special representation.
-
-.. code:: proto
-
-    optional bool val = 1; // description
-
-..
-
-Arguments parser excepts **--val** as **True**. If there is no **default** keyword, **val** variable would be **None** if not specified.
-
-.. code:: proto
-
-    optional bool val = 1 [default = true]; // description
-
-..
-
-**val** has default value, which is **True**, so there should be a way to set **False**. So **--val** accepts mandatory value, e.g. **--val=False** or **--val True**.
-
-.. code:: proto
-
-    repeated bool val = 1; // description
-
-..
-
-**repeated** booleans also need **True** or **False** mandatory value, e.g. **-b True -b False -b True**. Which would be stored in the list. Repeated positionals would look like **True False True**.
-
-Bolean value may be **True**, **False**, **t**, **f**, **y**, **n**, **1**, **0** - both lower and uppercase supported.
 
 Complex Example
 ===============
@@ -351,51 +335,96 @@ After generating all 3 files, let's think about these command parsing:
 
 ..
 
-For the first iteration we need to parse with main program parser. But it is created to parse the first and not the second. It will fail on **program create --help**. So as far as we have limited us to 2 options we may parse first 2 options only.
+For the first iteration we need to parse with main program parser. But it is created to parse the first and not the second. It will fail on **program create --help**. So as far as we are limited we may parse first option only (excluding program name).
 
-.. code:: python
+In order to help with this task, each parser has functions **{filename}_remove_args_tail** and **{filename}_keep_args_tail**. First removes arguments after specified number of arguments, the second preserves only tail arguments and removes specified number of first arguments. The result is written into **{filename}_PROTOARGS_ARGS**.
 
-   class ArgsParser:
+.. code:: bash
 
-       def parseCommand(self, argv):
-           self.config = multy_command_pa.parse("program", "Useful multi command", argv)
+    . multy_command_pa.sh
+    . multy_command_copy_pa.sh
+    . multy_command_create_pa.sh
 
-   if __name__ == "__main__":
-       parser = ArgsParser()
+    # remove all other except for COMMAND and posiible -h
+    multy_command_remove_args_tail 1 $@
 
-       parser.parseCommand(sys.argv[1:2])
-       print(parser.config)
+    # check first for possible help with allow_incomplete
+    multy_command_parse "${program}" "${description}" true \
+        $multy_command_PROTOARGS_ARGS
+
+    if [ "$?" -eq 0 ]; then
+        if [ "$multy_command_help" == true ]; then
+            multy_command_usage
+            echo "$multy_command_PROTOARGS_USAGE"
+            exit 0
+        fi
+    else
+        exit 1
+    fi
+
+    # second run to get command
+    multy_command_parse "${program}" "${description}" false \
+        $multy_command_PROTOARGS_ARGS
+
+    if [ "$?" -eq 0 ]; then
+        if [ "$multy_command_COMMAND_PRESENT" == true ]; then
+            echo "$multy_command_COMMAND"
+            ...
+        fi
+    else
+        exit 1
+    fi
 
 ..
 
 Ok, we have discovered command, now that's time to parse. The only problem here is that we have positional argument (which is command) standing not at the end, so we can't create proper schema to parse. But as long as we found proper command we do not need it any more, so how about removing it from arguments.
 
-.. code:: python
+.. code:: bash
 
-   class ArgsParser:
+    . multy_command_pa.sh
+    . multy_command_copy_pa.sh
+    . multy_command_create_pa.sh
 
-       def parseCommand(self, argv):
-           self.config = multy_command_pa.parse("program", "Useful multi command", argv)
+   ...
 
-       def parseCreate(self, argv):
-           self.config = multy_command_create_pa.parse("program create", "Useful create", argv)
+    # second run to get command
+    multy_command_parse "${program}" "${description}" false \
+        $multy_command_PROTOARGS_ARGS
 
-       def parseCopy(self, argv):
-           self.config = multy_command_copy_pa.parse("program copy", "Useful copy", argv)
+    if [ "$?" -ne 0 ]; then
+        exit 1
+    fi
 
-   if __name__ == "__main__":
-       parser = ArgsParser()
+    if [ "$multy_command_COMMAND" == "create" ]; then
 
-       parser.parseCommand(sys.argv[1:2])
-       print(parser.config)
+        # remove COMMAND from arguments
+        multy_command_keep_args_tail 1 "${args[@]}"
 
-       if (parser.config.COMMAND == "create"):
-           parser.parseCreate(sys.argv[2:])
-       elif (parser.config.COMMAND == "copy"):
-           parser.parseCopy(sys.argv[2:])
-       else:
-           sys.exit(1)
-       print(parser.config)
+        # check first for possible help with allow_incomplete
+        multy_command_create_parse "${program}" "${description}" true \
+            $multy_command_PROTOARGS_ARGS
+
+        if [ "$?" -eq 0 ]; then
+            if [ "$multy_command_create_help" == true ]; then
+                multy_command_create_usage "${program}" "${description}"
+                echo "$multy_command_create_PROTOARGS_USAGE"
+                exit 0
+            fi
+        else
+            exit 1
+        fi
+
+        # second run
+        multy_command_create_parse "${program}" "${description}" false \
+            $multy_command_PROTOARGS_ARGS
+
+        if [ "$?" -eq 0 ]; then
+            echo $multy_command_create_size
+            ...
+        else
+            exit 1
+        fi
+    fi
 
 ..
 

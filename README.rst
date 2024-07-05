@@ -1,3 +1,7 @@
+.. image:: src/Protoargs/img/banner2-direct.svg
+   :target: https://stand-with-ukraine.pp.ua/
+   :align: center
+
 Intro
 =====
 
@@ -17,15 +21,16 @@ Description
 
 **Protoargs** is python proto file transpiler, which generates arguments parser and configuration ready in-code structures using protobuf_ configuration.
 
-The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python**, **rust** and **go** are supported.
+The idea - you create *any_name_scheme.proto* file and then, using **protoargs** on the schema file, you will get generated arguments parser for the specific programming language. Currently **c++11**, **python**, **rust**, **go** or **bash** are supported.
 
-First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godoc_ for the in-code usage.
+First - checkout configuration construction rules below, and as a next step, go directly to specific manuals by clicking `cpp manual`_, `python manual`_, `rust manual`_, `go manual`_ or `bash manual`_ for the in-code usage.
 
 .. _protobuf: https://github.com/protocolbuffers/protobuf
-.. _cppdoc: doc/cpp/
-.. _pythondoc: doc/python/
-.. _rustdoc: doc/rust/
-.. _godoc: doc/go/
+.. _cpp manual: doc/cpp/
+.. _python manual: doc/python/
+.. _rust manual: doc/rust/
+.. _go manual: doc/go/
+.. _bash manual: doc/bash/
 
 Configuration File Rules
 ========================
@@ -235,11 +240,11 @@ So here is usage you will get with *-h/--help*.
 .. code:: bash
 
     usage: protoargs [-h] -i src -o dst [--loglevel loglevel] [--cpp] [--py]
-                     [--rust] [--go]
-    
+                     [--rust] [--go] [--bash]
+
     Protoargs program generates command line arguments parsers, using proto file
     as configuration.
-    
+
     optional arguments:
       -h, --help           show this help message and exit
       -i src               Path to proto file with protoargs configuration
@@ -265,6 +270,10 @@ So here is usage you will get with *-h/--help*.
                            proto file name, e.g.
                            [protoargs.proto]->[protoargs_pa.go]
                            {OPTIONAL,type:bool,default:"false"}
+      --bash               Generate bash arguments parser. Parser will have name
+                           of proto file name, e.g.
+                           [protoargs.proto]->[protoargs_pa.sh]
+                           {OPTIONAL,type:bool,default:"false"}
 
 ..
 
@@ -277,7 +286,7 @@ And you should get *protoargs_pa.py* file inside */tmp* directory.
 
 ..
 
-Now go directly to specific manuals by clicking cppdoc_, pythondoc_, rustdoc_ or godoc_ for the in-code usage.
+Now go directly to specific manuals by clicking `cpp manual`_, `python manual`_, `rust manual`_, `go manual`_ or `bash manual`_ for the in-code usage.
 
 License
 =======

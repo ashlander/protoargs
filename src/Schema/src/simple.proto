@@ -11,8 +11,8 @@ message protoargs
     optional bool version               = 4 [default = false];          // Converted to --version
     optional bool help                  = 5 [default = false];          // Converted to --help
     optional string c                   = 6 [default = "some value"];   // Converted to -c short option
-    required string r_underscore        = 7 [default = ""];             // Converted to r-underscore long option
-    optional string o_underscore        = 8 [default = ""];             // Converted to o-underscore long option
-    repeated string a_underscore        = 9;                            // Converted to a-underscore long option
-    optional string s_quote_in_descr    = 10;                           // Converted to s-quote-in-descr long option, "checking quotes"
+    required string r_underscore        = 7 [default = ""];             // Converted to --r-underscore long option
+    optional string o_underscore        = 8 [default = ""];             // Converted to --o-underscore long option
+    repeated string a_underscore        = 9;                            // Converted to --a-underscore long option
+    optional string s_quote_in_descr    = 10;                           // Converted to --s-quote-in-descr long option, "checking quotes"
 }//protoargs
