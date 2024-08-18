@@ -78,6 +78,70 @@ If you do not know what is **protobuf** project and **proto** configuration file
 
 12. Comments which are used for help description may not be multi-line.
 
+Quick Example
+=============
+
+Suppose we need argument parser with 2 parameters **A** and **B**. We may create **test.proto** file with configuration.
+
+**Configuration with optional A and B:**
+
+.. code:: proto
+
+    syntax = "proto2";
+    message protoargs
+    {
+        optional string A     = 1; // A param description
+        optional string B     = 2; // B param description
+    }//protoargs
+
+..
+
+**Configuration with required A and B:**
+
+.. code:: proto
+
+    syntax = "proto2";
+    message protoargs
+    {
+        required string A     = 1; // A param description
+        required string B     = 2; // B param description
+    }//protoargs
+
+..
+
+**Configuration with positional A and B:**
+
+.. code:: proto
+
+    syntax = "proto2";
+    message protoargs
+    {
+        required string A     = 1; // A param description
+        required string B     = 2; // B param description
+    }//protoargs
+    message protoargs_links
+    {
+    }//protoargs_links
+
+..
+
+**Configuration with optional A and positional B:**
+
+.. code:: proto
+
+    syntax = "proto2";
+    message protoargs
+    {
+        optional string A     = 1; // A param description
+        required string B     = 2; // B param description
+    }//protoargs
+    message protoargs_links
+    {
+        optional string A     = 1 [default = "A"];
+    }//protoargs_links
+
+..
+
 message protoargs
 =================
 
