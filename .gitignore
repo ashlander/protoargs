@@ -91,3 +91,6 @@ src/lib/
 src/include/ProtoargsConfig.h
 src/Protoargs/bin/*.bak
 
+# Generated
+src/TestsBash/src/*_pa.sh
+src/TestsPython/src/*_pa.py

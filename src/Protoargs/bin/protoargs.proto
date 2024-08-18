@@ -11,6 +11,7 @@ message protoargs
     optional bool py        = 11 [default = false];     // Generate python arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.py]
     optional bool rust      = 12 [default = false];     // Generate rust arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.rs]
     optional bool go        = 13 [default = false];     // Generate go arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.go]
+    optional bool bash      = 14 [default = false];     // Generate bash arguments parser. Parser will have name of proto file name, e.g. [protoargs.proto]->[protoargs_pa.sh]
 }//protoargs
 
 message protoargs_links
@@ -24,4 +25,5 @@ message protoargs_links
     optional string py      = 11 [default = "py"];
     optional string rust    = 12 [default = "rust"];
     optional string go      = 13 [default = "go"];
+    optional string bash    = 14 [default = "bash"];
 }//protoargs_links
