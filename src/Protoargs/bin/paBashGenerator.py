@@ -16,9 +16,9 @@ pt_uint64 = "uint64"
 pt_bool = "bool"
 pt_string = "string"
 
-# go types
-bash_float = "float32"
-bash_double = "float64"
+# there are no bash types, use the same types as in proto
+bash_float = "float"
+bash_double = "double"
 bash_int32 = "int32"
 bash_uint32 = "uint32"
 bash_int64 = "int64"

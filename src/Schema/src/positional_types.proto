@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+message protoargs
+{
+    required string STRING = 1 [default = "test"];  // Positional String Param
+    required int32 INT32 = 2;                       // Positional Integer Param
+    required float FLOAT = 3;                       // Positional Float Param
+    required bool BOOL = 4;                         // Positional Boolean Param
+}//protoargs
+
+message protoargs_links
+{
+}//protoargs

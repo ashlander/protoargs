@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+message protoargs
+{
+    optional string A = 1 [default = "test"];   // Param A
+    required int32 B = 2;                       // Param B
+    repeated float C = 3;                       // Param C
+}//protoargs
