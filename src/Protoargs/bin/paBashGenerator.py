@@ -49,12 +49,13 @@ class Generator:
     # Simple enough, dumb enough, but it works
     # @param path
     #
-    # @return 
+    # @return Usage string from python generator
     def __parasiteUsage(self, path):
         filename = os.path.splitext( os.path.basename(path) )[0]
         dstdir = os.path.join("/", "tmp")
         logging.info("Generate python parser from proto file '" + path + "'")
-        generator = paPyGenerator.Generator(path, dstdir)
+        #generator = paPyGenerator.Generator(path, dstdir)
+        generator = paPyGenerator.BashUsageIngector(path, dstdir)
         generator.generate()
 
         # import generated module dynamically
@@ -62,7 +63,8 @@ class Generator:
         module = __import__(filename + "_pa")
         os.environ['COLUMNS']="80" # make default limit in 80 columns
 
-        return module.usage("${program}", "${description}")
+        return module.usage("${program}", "${description}") \
+                .replace("optional arguments:", "arguments:") # optional arguments section contains required as well
 
     def getSourceFileData(self):
         return self.__bash
@@ -259,6 +261,80 @@ function %PACKAGE%_parse() #(program, description, allow_incomplete, args)
 }
 
 ########################################################################
+# Checkers
+########################################################################
+
+# Check if value is of type bool
+#
+# Arguments:
+#
+# * `value` - Value to check
+#
+# returns true if value of corresponding type
+function is_bool() #(value)
+{
+    local value=$1
+    [ "${value}" != true ] && [ "${value}" != false ] && return 1
+    return 0
+}
+
+# Check if value is of type float
+#
+# Arguments:
+#
+# * `value` - Value to check
+#
+# returns true if value of corresponding type
+function is_float() #(value)
+{
+    local value=$1
+    [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] && return 0
+    return 1
+}
+
+# Check if value is of type integer
+#
+# Arguments:
+#
+# * `value` - Value to check
+#
+# returns true if value of corresponding type
+function is_int() #(value)
+{
+    local value=$1
+    [[ "${value}" =~ ^[+-]?[0-9]+$ ]] && return 0
+    return 1
+}
+
+# Check if value is of type unsigned integer
+#
+# Arguments:
+#
+# * `value` - Value to check
+#
+# returns true if value of corresponding type
+function is_uint() #(value)
+{
+    local value=$1
+    [[ "${value}" =~ ^[0-9]+$ ]] && return 0
+    return 1
+}
+
+# Check if value is an argument
+#
+# Arguments:
+#
+# * `value` - Value to check
+#
+# returns true if value is an option
+function is_option() #(value)
+{
+    local value=$1
+    is_int "${value}" || is_float "${value}" || return 0
+    return 1
+}
+
+########################################################################
 # Helpers
 ########################################################################
 
@@ -314,7 +390,7 @@ function %PACKAGE%_keep_args_tail()
                 local value=$2
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
-                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'" >&2
                         echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
@@ -332,7 +408,7 @@ function %PACKAGE%_keep_args_tail()
                 local value=$2
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
-                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'" >&2
                         echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
@@ -369,7 +445,7 @@ function %PACKAGE%_keep_args_tail()
                 local value="${1#*=}"
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
-                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'" >&2
                         echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
@@ -395,7 +471,7 @@ function %PACKAGE%_keep_args_tail()
                 local value="${1#*=}"
                 if %CHECKER%; then
                     if [ "$allow_incomplete" == false ]; then
-                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'"
+                        echo "[ERR] expected '%OPTION%' of type %TYPE% but the value is '${value}'" >&2
                         echo "${%PACKAGE%_PROTOARGS_USAGE}"
                         return 1
                     fi
@@ -501,17 +577,17 @@ function %PACKAGE%_keep_args_tail()
 
                             # checker
                             code = code.replace("%CHECKER%", ( \
-                                    r"""[ "${value}" != true ] && [ "${value}" != false ]""" if token.type == pt_bool \
-                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]"""  if token.type == pt_double or token.type == pt_float \
-                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]"""  if token.type == pt_int32 or token.type == pt_int64 \
-                                    else r"""! [[ "${value}" =~ ^[0-9]+$ ]]"""  if token.type == pt_uint32 or token.type == pt_uint64 \
+                                    r"""! is_bool "${value}" """ if token.type == pt_bool \
+                                    else r"""! is_float "${value}" """  if token.type == pt_double or token.type == pt_float \
+                                    else r"""! is_int "${value}" """  if token.type == pt_int32 or token.type == pt_int64 \
+                                    else r"""! is_uint "${value}" """  if token.type == pt_uint32 or token.type == pt_uint64 \
                                     else r"""[ -z "0" ]""" \
                                     )) \
 
         code += """
             -*|--*)
-                if ! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || ! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]; then
-                    echo "[ERR] Unknown option '$1'"
+                if is_option "$1"; then
+                    echo "[ERR] Unknown option '$1'" >&2
                     echo "${%PACKAGE%_PROTOARGS_USAGE}"
                     return 1
                 fi
@@ -531,14 +607,14 @@ function %PACKAGE%_keep_args_tail()
 
         templatePositionalDefault = r"""
     if [ "$allow_incomplete" == false ] && [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "[ERR] Positional '%TRUENAME%' parameter is not set"
+        echo "[ERR] Positional '%TRUENAME%' parameter is not set" >&2
         echo "${%PACKAGE%_PROTOARGS_USAGE}"
         return 1
     fi
     local value="${POSITIONAL_ARGS[%POSITION%]}"
     if %CHECKER%; then
         if [ "$allow_incomplete" == false ]; then
-            echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'"
+            echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'" >&2
             echo "${%PACKAGE%_PROTOARGS_USAGE}"
             return 1
         fi
@@ -550,7 +626,7 @@ function %PACKAGE%_keep_args_tail()
 
         templatePositionalRepeated = r"""
     if [ "$allow_incomplete" == false ] && [ %POSITION% -ge ${#POSITIONAL_ARGS[@]} ]; then
-        echo "[ERR] Positional '%TRUENAME%' parameter is not set, needs to be at least 1"
+        echo "[ERR] Positional '%TRUENAME%' parameter is not set, needs to be at least 1" >&2
         echo "${%PACKAGE%_PROTOARGS_USAGE}"
         return 1
     fi
@@ -561,7 +637,7 @@ function %PACKAGE%_keep_args_tail()
         local value="${POSITIONAL_ARGS[$position]}"
         if %CHECKER%; then
             if [ "$allow_incomplete" == false ]; then
-                echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'"
+                echo "[ERR] Positional '%TRUENAME%' parameter expected to be of type '%TYPE%' but value is '$value'" >&2
                 echo "${%PACKAGE%_PROTOARGS_USAGE}"
                 return 1
             fi
@@ -614,10 +690,10 @@ function %PACKAGE%_keep_args_tail()
 
                             # checker
                             code = code.replace("%CHECKER%", ( \
-                                    r"""[ "${value}" != true ] && [ "${value}" != false ]""" if token.type == pt_bool \
-                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]"""  if token.type == pt_double or token.type == pt_float \
-                                    else r"""! [[ "${value}" =~ ^[+-]?[0-9]+$ ]]"""  if token.type == pt_int32 or token.type == pt_int64 \
-                                    else r"""! [[ "${value}" =~ ^[0-9]+$ ]]"""  if token.type == pt_uint32 or token.type == pt_uint64 \
+                                    r"""! is_bool "${value}" """ if token.type == pt_bool \
+                                    else r"""! is_float "${value}" """  if token.type == pt_double or token.type == pt_float \
+                                    else r"""! is_int "${value}" """  if token.type == pt_int32 or token.type == pt_int64 \
+                                    else r"""! is_uint "${value}" """  if token.type == pt_uint32 or token.type == pt_uint64 \
                                     else r"""[ -z "0" ]""" \
                                     )) \
 
@@ -691,7 +767,7 @@ function %PACKAGE%_keep_args_tail()
 
         templateRequired = r"""
     if [ "$allow_incomplete" == false ] && [ $%NAME%_PRESENT == false ]; then
-        echo "[ERR] Required '%OPTION%' is missing"
+        echo "[ERR] Required '%OPTION%' is missing" >&2
         echo "${%PACKAGE%_PROTOARGS_USAGE}"
         return 1
     fi

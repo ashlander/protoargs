@@ -25,13 +25,13 @@ type Config struct {
     Arghelp BoolValue
     /// Converted to -c short option
     Argc StringValue
-    /// Converted to r-underscore long option
+    /// Converted to --r-underscore long option
     Argr_underscore StringValue
-    /// Converted to o-underscore long option
+    /// Converted to --o-underscore long option
     Argo_underscore StringValue
-    /// Converted to a-underscore long option
+    /// Converted to --a-underscore long option
     Arga_underscore ArrayStringFlags
-    /// Converted to s-quote-in-descr long option, "checking quotes"
+    /// Converted to --s-quote-in-descr long option, "checking quotes"
     Args_quote_in_descr StringValue
 
 }
@@ -62,10 +62,10 @@ func PrepareOptions(program string) (*flag.FlagSet, *Config) {
     flags.BoolVar(&config.Argversion.val, `version`, false, `Converted to --version {OPTIONAL,type:bool,default:false}`)
     flags.BoolVar(&config.Arghelp.val, `help`, false, `Converted to --help {OPTIONAL,type:bool,default:false}`)
     flags.Var(&config.Argc, `c`, `Converted to -c short option {OPTIONAL,type:string,default:"some value"}`)
-    flags.Var(&config.Argr_underscore, `r-underscore`, `Converted to r-underscore long option {REQUIRED,type:string}`)
-    flags.Var(&config.Argo_underscore, `o-underscore`, `Converted to o-underscore long option {OPTIONAL,type:string,default:""}`)
-    flags.Var(&config.Arga_underscore, `a-underscore`, `Converted to a-underscore long option {REPEATED,type:string}`)
-    flags.Var(&config.Args_quote_in_descr, `s-quote-in-descr`, `Converted to s-quote-in-descr long option, "checking quotes" {OPTIONAL,type:string,default:""}`)
+    flags.Var(&config.Argr_underscore, `r-underscore`, `Converted to --r-underscore long option {REQUIRED,type:string}`)
+    flags.Var(&config.Argo_underscore, `o-underscore`, `Converted to --o-underscore long option {OPTIONAL,type:string,default:""}`)
+    flags.Var(&config.Arga_underscore, `a-underscore`, `Converted to --a-underscore long option {REPEATED,type:string}`)
+    flags.Var(&config.Args_quote_in_descr, `s-quote-in-descr`, `Converted to --s-quote-in-descr long option, "checking quotes" {OPTIONAL,type:string,default:""}`)
 
     return flags, config
 }
@@ -101,7 +101,7 @@ func UsageExt(program string, description string, limit uint32) string {
     usage += "\n\n" + `required arguments:`
     block = `
   --count value          Converted to --count {REQUIRED,type:uint64})
-  --r-underscore value   Converted to r-underscore long option {REQUIRED,type:string})`
+  --r-underscore value   Converted to --r-underscore long option {REQUIRED,type:string})`
     usage += splitUsage(block, limit)
     usage += "\n\n" + `optional arguments:`
     block = `
@@ -110,10 +110,10 @@ func UsageExt(program string, description string, limit uint32) string {
   --version              Converted to --version {OPTIONAL,type:bool,default:false})
   --help                 Converted to --help {OPTIONAL,type:bool,default:false})
   -c value               Converted to -c short option {OPTIONAL,type:string,default:"some value"})
-  --o-underscore value   Converted to o-underscore long option {OPTIONAL,type:string,default:""})
-  --a-underscore value   Converted to a-underscore long option {REPEATED,type:string})
+  --o-underscore value   Converted to --o-underscore long option {OPTIONAL,type:string,default:""})
+  --a-underscore value   Converted to --a-underscore long option {REPEATED,type:string})
   --s-quote-in-descr value
-                         Converted to s-quote-in-descr long option, "checking quotes" {OPTIONAL,type:string,default:""})`
+                         Converted to --s-quote-in-descr long option, "checking quotes" {OPTIONAL,type:string,default:""})`
     usage += splitUsage(block, limit)
     usage += "\n" 
 

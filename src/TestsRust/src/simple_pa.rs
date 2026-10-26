@@ -18,13 +18,13 @@ pub struct Config {
     help: Option<bool>,
     /// Converted to -c short option
     c: Option<String>,
-    /// Converted to r-underscore long option
+    /// Converted to --r-underscore long option
     r_underscore: Option<String>,
-    /// Converted to o-underscore long option
+    /// Converted to --o-underscore long option
     o_underscore: Option<String>,
-    /// Converted to a-underscore long option
+    /// Converted to --a-underscore long option
     a_underscore: Vec<String>,
-    /// Converted to s-quote-in-descr long option, "checking quotes"
+    /// Converted to --s-quote-in-descr long option, "checking quotes"
     s_quote_in_descr: Option<String>,
 
 }
@@ -199,28 +199,28 @@ pub fn prepare_options_ext<'a>(command: clap::Command<'a>) -> clap::Command<'a> 
                    .short('c'))
 
                 .arg(clap::Arg::new(r#"r-underscore"#)
-                   .help(r#"Converted to r-underscore long option {REQUIRED,type:string,default:""}"#)
+                   .help(r#"Converted to --r-underscore long option {REQUIRED,type:string,default:""}"#)
                    .takes_value(true)
                    .required(true)
                    .multiple_occurrences(false)
                    .long(r#"r-underscore"#))
 
                 .arg(clap::Arg::new(r#"o-underscore"#)
-                   .help(r#"Converted to o-underscore long option {OPTIONAL,type:string,default:""}"#)
+                   .help(r#"Converted to --o-underscore long option {OPTIONAL,type:string,default:""}"#)
                    .takes_value(true)
                    .required(false)
                    .multiple_occurrences(false)
                    .long(r#"o-underscore"#))
 
                 .arg(clap::Arg::new(r#"a-underscore"#)
-                   .help(r#"Converted to a-underscore long option {REPEATED,type:string,default:""}"#)
+                   .help(r#"Converted to --a-underscore long option {REPEATED,type:string,default:""}"#)
                    .takes_value(true)
                    .required(false)
                    .multiple_occurrences(true)
                    .long(r#"a-underscore"#))
 
                 .arg(clap::Arg::new(r#"s-quote-in-descr"#)
-                   .help(r#"Converted to s-quote-in-descr long option, "checking quotes" {OPTIONAL,type:string,default:""}"#)
+                   .help(r#"Converted to --s-quote-in-descr long option, "checking quotes" {OPTIONAL,type:string,default:""}"#)
                    .takes_value(true)
                    .required(false)
                    .multiple_occurrences(false)

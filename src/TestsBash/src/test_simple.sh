@@ -301,6 +301,75 @@ if [ "$NOK" == true ]; then
     fail
 fi
 
+echo "##########################################"
+NOK=false
+TEST_NAME="TestSimpleCheckUnknownOptionShort"
+echo "${TEST_NAME}"
+echo "##########################################"
+
+simple_parse "${program}" "${description}" true \
+        --count="stringnotdigit" \
+        --configuration="/tmp/conf" \
+        --flags=true \
+        --flags=false \
+        -c="flags should be true and false" \
+        --r-underscore="no underscore" \
+        -w
+
+if [ "$?" -eq 0 ]; then
+    NOK=true
+fi
+if [ "$NOK" == true ]; then
+    fail_line $LINENO
+    fail
+fi
+
+echo "##########################################"
+NOK=false
+TEST_NAME="TestSimpleCheckUnknownOptionLong"
+echo "${TEST_NAME}"
+echo "##########################################"
+
+simple_parse "${program}" "${description}" true \
+        --count="stringnotdigit" \
+        --configuration="/tmp/conf" \
+        --flags=true \
+        --flags=false \
+        -c="flags should be true and false" \
+        --r-underscore="no underscore" \
+        --unknown
+
+if [ "$?" -eq 0 ]; then
+    NOK=true
+fi
+if [ "$NOK" == true ]; then
+    fail_line $LINENO
+    fail
+fi
+
+
+echo "##########################################"
+NOK=false
+TEST_NAME="TestSimpleCheckUnknownPositionalValue"
+echo "${TEST_NAME}"
+echo "##########################################"
+
+simple_parse "${program}" "${description}" true \
+        --count="stringnotdigit" \
+        --configuration="/tmp/conf" \
+        --flags=true \
+        --flags=false \
+        -c="flags should be true and false" \
+        --r-underscore="no underscore" \
+        -10
+
+if [ "$?" -ne 0 ]; then
+    NOK=true
+fi
+if [ "$NOK" == true ]; then
+    fail_line $LINENO
+    fail
+fi
 
 #############################################################
 # Failures summary

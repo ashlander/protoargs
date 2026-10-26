@@ -142,6 +142,9 @@ class Generator:
             return ""
         return (r'r"""' + token.value + r'"""' if token.type == pt_string else token.value).replace("true", "True").replace("false", "False")
 
+    def convertToDefaultInUsage(self, token):
+        return token.value
+
     # generate python source file content
     def __generateSourceFromTokens(self, tokens):
         head = """import argparse\n
@@ -228,7 +231,7 @@ def parse(program, description, argv, known=False):
 
     def __argparseProgramDescription(self, tokens):
         code = """
-    parser = argparse.ArgumentParser(description=description, prog=program)
+    parser = argparse.ArgumentParser(description=description, prog=program, add_help=False)
 """
         token = self.__getToken(tokens, paTokenizer.pd_message, paTokenizer.pa_main)
         if token.valid():
@@ -275,7 +278,7 @@ def parse(program, description, argv, known=False):
 
     def __argparseProgramOptions(self, tokens):
         template = r'parser.add_argument(r"""%OPTIONS%""" %TYPE%, help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
-        templateRequired = r'parser.add_argument(r"""%OPTIONS%""" %TYPE%, required=True, help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%,default:"%DEFAULT%"}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
+        templateRequired = r'parser.add_argument(r"""%OPTIONS%""" %TYPE%, required=True, help=r"""%DESCRIPTION% {%FREQUENCY%,type:%PTYPE%}""", metavar=r"""%ARGNAME%""", dest=r"""%ARGNAME%""" %NARGS% %ACTIONS% %DEFAULTVAL% %CONST%)'
         code = ""
         positional = []
 
@@ -301,12 +304,9 @@ def parse(program, description, argv, known=False):
                             logging.debug("links found for: " + str(token) + "\n" + str(links))
                             options = ""
                             for link in links:
-                                if link.name != "h" and link.name != "help": # exclude predefined args
-                                    if options:
-                                        options += r'""",r"""'
-                                    options += self.__convertToOptName( self.__convertToArgName(link.name) ) # convert into args
-                                else:
-                                    logging.warn("'" + link.name + "' conflicts with predefined argument");
+                                if options:
+                                    options += r'""",r"""'
+                                options += self.__convertToOptName( self.__convertToArgName(link.name) ) # convert into args
 
                             if options:
                                 code += "    "
@@ -316,7 +316,7 @@ def parse(program, description, argv, known=False):
                                         .replace("%PTYPE%", token.type) \
                                         .replace("%ARGNAME%", token.name) \
                                         .replace("%FREQUENCY%", token.field.upper()) \
-                                        .replace("%DEFAULT%", token.value) \
+                                        .replace("%DEFAULT%", self.convertToDefaultInUsage(token)) \
                                         .replace("%TYPE%", \
                                         (", type=" + self.__convertToPyType(token) if token.field == paTokenizer.pf_repeated or (token.value and token.value == "true") or token.type != pt_bool else "") ) \
                                         .replace("%DEFAULTVAL%", \
@@ -334,31 +334,28 @@ def parse(program, description, argv, known=False):
                             logging.debug("positional arg found: " + str(token))
                             positional.append(token)
                     else:
-                        if token.name != "h" and token.name != "help": # exclude predefined args
-                            logging.debug("convert main protoargs field name into long arg name: " + str(token))
-                            code += "    "
-                            code += t \
-                                    .replace("%OPTIONS%", self.__convertToOptName( self.__convertToArgName(token.name)) ) \
-                                    .replace("%DESCRIPTION%",token.description) \
-                                    .replace("%PTYPE%", token.type) \
-                                    .replace("%ARGNAME%", token.name) \
-                                    .replace("%FREQUENCY%", token.field.upper()) \
-                                    .replace("%DEFAULT%", token.value) \
-                                    .replace("%TYPE%", \
-                                    (", type=" + self.__convertToPyType(token) if token.field == paTokenizer.pf_repeated or (token.value  and token.value == "true") or token.type != pt_bool else "") ) \
-                                    .replace("%DEFAULTVAL%", \
-                                    (", default=" + self.__convertToDefaultValue(token) if token.value else "") ) \
-                                    .replace("%NARGS%", \
-                                    (r', nargs="?"' if token.field == paTokenizer.pf_repeated and token.type != pt_bool else "") ) \
-                                    .replace("%ACTIONS%", \
-                                    (r', action="append"' if token.field == paTokenizer.pf_repeated else \
-                                    (r', action="store_const"' if (not token.value or token.value == "false") and token.type == pt_bool else "")) ) \
-                                    .replace("%CONST%", \
-                                    (r', const=True' if token.type == pt_bool and (not token.value or token.value == "false") and token.field != paTokenizer.pf_repeated else "") ) \
+                        logging.debug("convert main protoargs field name into long arg name: " + str(token))
+                        code += "    "
+                        code += t \
+                                .replace("%OPTIONS%", self.__convertToOptName( self.__convertToArgName(token.name)) ) \
+                                .replace("%DESCRIPTION%",token.description) \
+                                .replace("%PTYPE%", token.type) \
+                                .replace("%ARGNAME%", token.name) \
+                                .replace("%FREQUENCY%", token.field.upper()) \
+                                .replace("%DEFAULT%", self.convertToDefaultInUsage(token)) \
+                                .replace("%TYPE%", \
+                                (", type=" + self.__convertToPyType(token) if token.field == paTokenizer.pf_repeated or (token.value  and token.value == "true") or token.type != pt_bool else "") ) \
+                                .replace("%DEFAULTVAL%", \
+                                (", default=" + self.__convertToDefaultValue(token) if token.value else "") ) \
+                                .replace("%NARGS%", \
+                                (r', nargs="?"' if token.field == paTokenizer.pf_repeated and token.type != pt_bool else "") ) \
+                                .replace("%ACTIONS%", \
+                                (r', action="append"' if token.field == paTokenizer.pf_repeated else \
+                                (r', action="store_const"' if (not token.value or token.value == "false") and token.type == pt_bool else "")) ) \
+                                .replace("%CONST%", \
+                                (r', const=True' if token.type == pt_bool and (not token.value or token.value == "false") and token.field != paTokenizer.pf_repeated else "") ) \
 
-                            code += "\n"
-                        else:
-                            logging.warn("'" + token.name + "' conflicts with predefined argument");
+                        code += "\n"
                 else:
                     logging.warn("unknown token inside protoargs structure: " + str(token))
 
@@ -378,4 +375,20 @@ def parse(program, description, argv, known=False):
         args = parser.parse_args(argv)
 """
         return code
+
+
+# class for Usage injection to Bash Generator
+class BashUsageIngector(Generator):
+
+    # changing default values in usage output
+    def convertToDefaultInUsage(self, token):
+        if not token.value:
+            if token.field == paTokenizer.pf_repeated:
+                return "()"
+            if token.type == pt_bool:
+                return "false"
+            if token.type == pt_string:
+                return ""
+            return "0"
+        return token.value
 

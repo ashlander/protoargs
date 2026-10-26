@@ -2,7 +2,7 @@
 
 # include parser
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-. $SCRIPTPATH/position_types_pa.sh
+. $SCRIPTPATH/positional_types_pa.sh
 
 # common variables
 program="test_positional_types.sh"
@@ -59,112 +59,30 @@ fi
 
 echo "##########################################"
 NOK=false
-TEST_NAME="TestPositionalTypesConnectShortAndLongArgsTogether"
-echo "${TEST_NAME}"
-echo "##########################################"
-
-positional_types_parse "${program}" "${description}" false \
-        --rb \
-        --reqbool \
-        false \
-        true \
-        true false true
-
-if [ "$?" -eq 0 ]; then
-    if [ "$positional_types_req_bool_PRESENT" != true ] || [ "$positional_types_req_bool" != true ]; then
-        fail_line $LINENO
-    fi
-else
-    NOK=true
-fi
-if [ "$NOK" == true ]; then
-    fail
-fi
-
-echo "##########################################"
-NOK=false
-TEST_NAME="TestPositionalTypesPositiveShort"
-echo "${TEST_NAME}"
-echo "##########################################"
-
-positional_types_parse "${program}" "${description}" false \
-        --rb \
-        false \
-        true \
-        true false true
-
-if [ "$?" -eq 0 ]; then
-    # check defaults
-    if [ "$positional_types_req_bool_PRESENT" != true ] || [ "$positional_types_req_bool" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_opt_bool_PRESENT" != false ] || [ "$positional_types_opt_bool" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_rep_bool_PRESENT" != false ] || [ "${#positional_types_rep_bool[@]}" -ne 0 ]  || [ "$positional_types_rep_bool_COUNT" -ne 0 ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != true ] || [ "$positional_types_OPTBOOL" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != true ] || [ "$positional_types_ALTBOOL" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_REOBOOL_PRESENT" != true ] || [ "${#positional_types_REOBOOL[@]}" -ne 3 ] || [ "$positional_types_REOBOOL_COUNT" -ne 3 ]; then
-        fail_line $LINENO
-    fi
-else
-    NOK=true
-fi
-if [ "$NOK" == true ]; then
-    fail
-fi
-
-echo "##########################################"
-NOK=false
 TEST_NAME="TestPositionalTypesPositiveAll"
 echo "${TEST_NAME}"
 echo "##########################################"
 
 positional_types_parse "${program}" "${description}" false \
-        --rb \
-        --optbool \
-        --repbool false \
-        --repbool true \
-        --repbool false \
-        false \
-        true \
-        true false true
+        "Some string argument" \
+        34 \
+        1.454 \
+        true
 
 if [ "$?" -eq 0 ]; then
-    # check defaults
-    if [ "$positional_types_req_bool_PRESENT" != true ] || [ "$positional_types_req_bool" != true ]; then
+    if [ "$positional_types_STRING_PRESENT" == false ] || [ "$positional_types_STRING" != "Some string argument" ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_opt_bool_PRESENT" != true ] || [ "$positional_types_opt_bool" != true ]; then
+    if [ "$positional_types_INT32_PRESENT" == false ] || [ "$positional_types_INT32" -ne 34 ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_rep_bool_PRESENT" != true ] || [ "${#positional_types_rep_bool[@]}" -ne 3 ]  || [ "$positional_types_rep_bool_COUNT" -ne 3 ]; then
+    if [ "$positional_types_FLOAT_PRESENT" == false ] || [ "$positional_types_FLOAT" != "1.454" ]; then
         fail_line $LINENO
     fi
-    if [ "${positional_types_rep_bool[0]}" != false ]; then
+    if [ "$positional_types_BOOL_PRESENT" == false ] || [ "$positional_types_BOOL" != true ]; then
         fail_line $LINENO
     fi
-    if [ "${positional_types_rep_bool[1]}" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "${positional_types_rep_bool[2]}" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != true ] || [ "$positional_types_OPTBOOL" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != true ] || [ "$positional_types_ALTBOOL" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_REOBOOL_PRESENT" != true ] || [ "${#positional_types_REOBOOL[@]}" -ne 3 ] || [ "$positional_types_REOBOOL_COUNT" -ne 3 ]; then
-        fail_line $LINENO
-    fi
+
 else
     NOK=true
 fi
@@ -179,26 +97,20 @@ echo "${TEST_NAME}"
 echo "##########################################"
 
 positional_types_parse "${program}" "${description}" true \
-        --optbool \
+        "Some string argument" \
+        34
 
 if [ "$?" -eq 0 ]; then
-    # check defaults
-    if [ "$positional_types_req_bool_PRESENT" != false ]; then
+    if [ "$positional_types_STRING_PRESENT" == false ] || [ "$positional_types_STRING" != "Some string argument" ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_opt_bool_PRESENT" != true ] || [ "$positional_types_opt_bool" != true ]; then
+    if [ "$positional_types_INT32_PRESENT" == false ] || [ "$positional_types_INT32" -ne 34 ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_rep_bool_PRESENT" != false ] || [ "${#positional_types_rep_bool[@]}" -ne 0 ] || [ "$positional_types_rep_bool_COUNT" -ne 0 ]; then
+    if [ "$positional_types_FLOAT_PRESENT" == true ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_REOBOOL_PRESENT" != false ] || [ "${#positional_types_REOBOOL[@]}" -ne 0 ] || [ "$positional_types_REOBOOL_COUNT" -ne 0 ]; then
+    if [ "$positional_types_BOOL_PRESENT" == true ]; then
         fail_line $LINENO
     fi
 else
@@ -207,121 +119,6 @@ fi
 if [ "$NOK" == true ]; then
     fail
 fi
-
-echo "##########################################"
-NOK=false
-TEST_NAME="TestPositionalTypesPositiveAllEquals"
-echo "${TEST_NAME}"
-echo "##########################################"
-
-positional_types_parse "${program}" "${description}" false \
-        --reqbool \
-        --optbool \
-        --repbool=false \
-        --repbool=true \
-        --repbool=false \
-        false \
-        true \
-        true false true
-
-if [ "$?" -eq 0 ]; then
-    # check defaults
-    if [ "$positional_types_req_bool_PRESENT" != true ] || [ "$positional_types_req_bool" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_opt_bool_PRESENT" != true ] || [ "$positional_types_opt_bool" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_rep_bool_PRESENT" != true ] || [ "${#positional_types_rep_bool[@]}" -ne 3 ]  || [ "$positional_types_rep_bool_COUNT" -ne 3 ]; then
-        fail_line $LINENO
-    fi
-    if [ "${positional_types_rep_bool[0]}" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "${positional_types_rep_bool[1]}" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "${positional_types_rep_bool[2]}" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != true ] || [ "$positional_types_OPTBOOL" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != true ] || [ "$positional_types_ALTBOOL" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_REOBOOL_PRESENT" != true ] || [ "${#positional_types_REOBOOL[@]}" -ne 3 ] || [ "$positional_types_REOBOOL_COUNT" -ne 3 ]; then
-        fail_line $LINENO
-    fi
-else
-    NOK=true
-fi
-if [ "$NOK" == true ]; then
-    fail
-fi
-
-echo "##########################################"
-NOK=false
-TEST_NAME="TestPositionalTypesMissingRequired"
-echo "${TEST_NAME}"
-echo "##########################################"
-
-positional_types_parse "${program}" "${description}" false \
-    false \
-    false \
-    false false false
-
-if [ "$?" -eq 0 ]; then
-    NOK=true
-else
-    if [ "$positional_types_req_bool_PRESENT" != false ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_REOBOOL_PRESENT" != true ]; then
-        fail_line $LINENO
-    fi
-fi
-if [ "$NOK" == true ]; then
-    fail
-fi
-
-echo "##########################################"
-NOK=false
-TEST_NAME="TestPositionalTypesMissingRepeatedPositional"
-echo "${TEST_NAME}"
-echo "##########################################"
-
-positional_types_parse "${program}" "${description}" false \
-    --reqbool \
-    true \
-    true
-
-if [ "$?" -eq 0 ]; then
-    NOK=true
-else
-    if [ "$positional_types_req_bool_PRESENT" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != true ]; then
-        fail_line $LINENO
-    fi
-    if [ "$positional_types_REOBOOL_PRESENT" != false ]; then
-        fail_line $LINENO
-    fi
-fi
-if [ "$NOK" == true ]; then
-    fail
-fi
-
 
 echo "##########################################"
 NOK=false
@@ -330,24 +127,24 @@ echo "${TEST_NAME}"
 echo "##########################################"
 
 positional_types_parse "${program}" "${description}" false \
-    --reqbool \
-    true \
-    true \
-    true true 1
+        true \
+        "Some string argument" \
+        34 \
+        1.454
 
 if [ "$?" -eq 0 ]; then
     NOK=true
 else
-    if [ "$positional_types_req_bool_PRESENT" != true ]; then
+    if [ "$positional_types_STRING_PRESENT" == false ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != true ]; then
+    if [ "$positional_types_INT32_PRESENT" == true ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != true ]; then
+    if [ "$positional_types_FLOAT_PRESENT" == true ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_REOBOOL_PRESENT" != false ]; then
+    if [ "$positional_types_BOOL_PRESENT" == true ]; then
         fail_line $LINENO
     fi
 fi
@@ -357,27 +154,92 @@ fi
 
 echo "##########################################"
 NOK=false
+TEST_NAME="TestPositionalTypesPositionalWrongType2"
+echo "${TEST_NAME}"
+echo "##########################################"
+
+positional_types_parse "${program}" "${description}" false \
+        "Some string argument" \
+        34 \
+        true \
+        1.454
+
+if [ "$?" -eq 0 ]; then
+    NOK=true
+else
+    if [ "$positional_types_STRING_PRESENT" == false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$positional_types_INT32_PRESENT" == false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$positional_types_FLOAT_PRESENT" == true ]; then
+        fail_line $LINENO
+    fi
+    if [ "$positional_types_BOOL_PRESENT" == true ]; then
+        fail_line $LINENO
+    fi
+fi
+if [ "$NOK" == true ]; then
+    fail
+fi
+
+echo "##########################################"
+NOK=false
+TEST_NAME="TestPositionalTypesPositionalWrongType3"
+echo "${TEST_NAME}"
+echo "##########################################"
+
+positional_types_parse "${program}" "${description}" false \
+        true \
+        34 \
+        1.454 \
+        "Some string argument"
+
+if [ "$?" -eq 0 ]; then
+    NOK=true
+else
+    if [ "$positional_types_STRING_PRESENT" == false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$positional_types_INT32_PRESENT" == false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$positional_types_FLOAT_PRESENT" == false ]; then
+        fail_line $LINENO
+    fi
+    if [ "$positional_types_BOOL_PRESENT" == true ]; then
+        fail_line $LINENO
+    fi
+fi
+if [ "$NOK" == true ]; then
+    fail
+fi
+
+
+echo "##########################################"
+NOK=false
 TEST_NAME="TestPositionalTypesPositionalWrongTypeAllowed"
 echo "${TEST_NAME}"
 echo "##########################################"
 
 positional_types_parse "${program}" "${description}" true \
-    --reqbool \
-    true \
-    true \
-    true true 1
+        true \
+        "Some string argument" \
+        34 \
+        1.454
 
 if [ "$?" -eq 0 ]; then
-    if [ "$positional_types_req_bool_PRESENT" != true ]; then
+    if [ "$positional_types_STRING_PRESENT" == false ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_OPTBOOL_PRESENT" != true ]; then
+    if [ "$positional_types_INT32_PRESENT" == true ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_ALTBOOL_PRESENT" != true ]; then
+    if [ "$positional_types_FLOAT_PRESENT" == false ]; then
         fail_line $LINENO
     fi
-    if [ "$positional_types_REOBOOL_PRESENT" != true ]; then
+    if [ "$positional_types_BOOL_PRESENT" == true ]; then
         fail_line $LINENO
     fi
 else
